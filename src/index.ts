@@ -22,12 +22,12 @@ async function main() {
   const { runAudit } = await import('./runner');
   const result = await runAudit(config);
 
-  // Reporter wired up in phase 5 — log summary for now
-  const counts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
-  for (const issue of result.issues) counts[issue.impact]++;
+  const { generateReports } = await import('./reporter');
+  const { reportPath, remediationPath } = await generateReports(result, 'reports');
 
-  console.log(`\nAudit complete — ${result.pagesAudited.length} page(s) audited`);
-  console.log(`Issues: ${counts.critical} critical, ${counts.serious} serious, ${counts.moderate} moderate, ${counts.minor} minor`);
+  console.log(`\nAudit complete — ${result.pagesAudited.length} page(s) audited, ${result.issues.length} issue(s) found`);
+  console.log(`  Report:      ${reportPath}`);
+  console.log(`  Remediation: ${remediationPath}`);
 }
 
 main().catch((err) => {
