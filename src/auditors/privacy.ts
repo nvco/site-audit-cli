@@ -1,7 +1,92 @@
 import { Page } from 'playwright';
 import { Config, Issue } from '../types';
 
-export async function runPrivacyAudit(page: Page, config: Config): Promise<Issue[]> {
-  // Stub — implemented in phase 3
-  return [];
+const CONSENT_SELECTORS = [
+  '[id*="cookie"]', '[class*="cookie"]',
+  '[id*="consent"]', '[class*="consent"]',
+  '[id*="gdpr"]', '[class*="gdpr"]',
+  '[id*="banner"]', '[class*="banner"]',
+];
+
+export async function runPrivacyAudit(page: Page, _config: Config): Promise<Issue[]> {
+  const issues: Issue[] = [];
+  const pageUrl = page.url();
+  const origin = new URL(pageUrl).origin;
+
+  // Cookie consent banner
+  let hasConsent = false;
+  for (const sel of CONSENT_SELECTORS) {
+    if (await page.locator(sel).first().isVisible({ timeout: 1000 }).catch(() => false)) {
+      hasConsent = true;
+      break;
+    }
+  }
+  if (!hasConsent) {
+    issues.push({
+      prefix: 'PRI',
+      impact: 'serious',
+      description: 'No cookie consent banner detected',
+      location: pageUrl,
+      docLink: 'https://gdpr.eu/cookies/',
+      remediation: 'Implement a cookie consent mechanism that obtains user consent before setting non-essential cookies, as required by GDPR and ePrivacy Directive.',
+      rule: 'cookie-consent-banner',
+      pageUrl,
+    });
+  }
+
+  // Privacy policy link
+  const hasPrivacyLink = await page.locator('a').evaluateAll((els) =>
+    els.some((el) => /privacy\s*(policy|notice)/i.test(el.textContent ?? ''))
+  );
+  if (!hasPrivacyLink) {
+    issues.push({
+      prefix: 'PRI',
+      impact: 'serious',
+      description: 'No privacy policy link detected',
+      location: pageUrl,
+      docLink: 'https://gdpr.eu/privacy-notice/',
+      remediation: 'Add a clearly visible link to your privacy policy on every page, typically in the footer.',
+      rule: 'privacy-policy-link',
+      pageUrl,
+    });
+  }
+
+  // CCPA "Do Not Sell" link
+  const hasDoNotSell = await page.locator('a').evaluateAll((els) =>
+    els.some((el) => /do not sell/i.test(el.textContent ?? ''))
+  );
+  if (!hasDoNotSell) {
+    issues.push({
+      prefix: 'PRI',
+      impact: 'moderate',
+      description: 'No "Do Not Sell or Share My Personal Information" link detected',
+      location: pageUrl,
+      docLink: 'https://oag.ca.gov/privacy/ccpa',
+      remediation: 'If your site targets California residents, add a "Do Not Sell or Share My Personal Information" link as required by CCPA.',
+      rule: 'ccpa-do-not-sell-link',
+      pageUrl,
+    });
+  }
+
+  // GPC declaration
+  try {
+    const gpcUrl = `${origin}/.well-known/gpc.json`;
+    const response = await page.request.get(gpcUrl);
+    if (!response.ok()) {
+      issues.push({
+        prefix: 'PRI',
+        impact: 'minor',
+        description: 'No GPC (Global Privacy Control) declaration found',
+        location: gpcUrl,
+        docLink: 'https://globalprivacycontrol.org/',
+        remediation: 'Publish a /.well-known/gpc.json file with {"gpc": true, "lastUpdate": "YYYY-MM-DD"} to declare GPC support.',
+        rule: 'gpc-declaration',
+        pageUrl,
+      });
+    }
+  } catch {
+    // network error — skip silently
+  }
+
+  return issues;
 }
