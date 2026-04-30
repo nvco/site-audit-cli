@@ -1,0 +1,7 @@
+services:
+  site-audit-cli:
+    build: .
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./reports:/app/reports
+    working_dir: /app
