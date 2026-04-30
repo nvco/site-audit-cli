@@ -2,6 +2,7 @@ export type IssuePrefix = 'ACC' | 'PRI' | 'COO' | 'SEC' | 'LNK';
 export type ImpactLevel = 'critical' | 'serious' | 'moderate' | 'minor';
 
 export interface Issue {
+  id?: string;
   prefix: IssuePrefix;
   impact: ImpactLevel;
   description: string;
