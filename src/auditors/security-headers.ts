@@ -1,4 +1,3 @@
-import { Page } from 'playwright';
 import { Config, Issue, ImpactLevel } from '../types';
 
 interface HeaderCheck {
@@ -53,20 +52,12 @@ const HEADER_CHECKS: HeaderCheck[] = [
   },
 ];
 
-export async function runSecurityHeadersAudit(page: Page, _config: Config): Promise<Issue[]> {
+export async function runSecurityHeadersAudit(
+  headers: Record<string, string>,
+  pageUrl: string,
+  _config: Config
+): Promise<Issue[]> {
   const issues: Issue[] = [];
-  const pageUrl = page.url();
-
-  let headers: Record<string, string> = {};
-  try {
-    const response = await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
-    if (response) {
-      headers = await response.allHeaders();
-    }
-  } catch (err) {
-    console.warn(`[security-headers] Failed to load ${pageUrl}: ${err instanceof Error ? err.message : err}`);
-    return issues;
-  }
 
   for (const check of HEADER_CHECKS) {
     if (!(check.header in headers)) {

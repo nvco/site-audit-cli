@@ -9,7 +9,8 @@ import { runBrokenLinksAudit } from './auditors/broken-links';
 
 export async function runAudit(config: Config): Promise<AuditResult> {
   const browser = await chromium.launch();
-  const context = await browser.newContext();
+  // bypassCSP so axe-core can be injected regardless of the page's Content-Security-Policy
+  const context = await browser.newContext({ bypassCSP: true });
   const page = await context.newPage();
 
   let urls: string[] = [];
@@ -26,8 +27,12 @@ export async function runAudit(config: Config): Promise<AuditResult> {
     const url = urls[i];
     console.log(`Auditing [${i + 1}/${urls.length}] ${url}`);
 
+    let responseHeaders: Record<string, string> = {};
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded' });
+      const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
+      if (response) {
+        responseHeaders = await response.allHeaders();
+      }
     } catch (err) {
       console.warn(`[runner] Failed to load ${url}: ${err instanceof Error ? err.message : err}`);
       continue;
@@ -38,7 +43,7 @@ export async function runAudit(config: Config): Promise<AuditResult> {
     if (config.modules.accessibility) auditors.push(() => runAccessibilityAudit(page, config));
     if (config.modules.privacy) auditors.push(() => runPrivacyAudit(page, config));
     if (config.modules.cookies) auditors.push(() => runCookieAudit(page, config));
-    if (config.modules.securityHeaders) auditors.push(() => runSecurityHeadersAudit(page, config));
+    if (config.modules.securityHeaders) auditors.push(() => runSecurityHeadersAudit(responseHeaders, url, config));
     if (config.modules.brokenLinks) auditors.push(() => runBrokenLinksAudit(page, config));
 
     for (const auditor of auditors) {
@@ -63,6 +68,7 @@ export async function runAudit(config: Config): Promise<AuditResult> {
     issues,
   };
 }
+
 
 function applySuppress(issues: Issue[], config: Config): Issue[] {
   if (config.suppress.length === 0) return issues;

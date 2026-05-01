@@ -2,6 +2,16 @@
 
 ## 2026-05-01
 
+### Fixed
+- Accessibility auditor now runs all WCAG tags up to the configured version/level (was only running WCAG 2.2-specific rules, missing all 2.0/2.1 violations)
+- Accessibility reference links now point to W3C WAI Understanding pages instead of dequeuniversity.com
+- Security headers auditor no longer does a second page.goto() — headers captured from runner's initial navigation
+- Browser context now uses bypassCSP to allow axe-core injection on pages with Content-Security-Policy
+- Test page redesigned with targeted distinct violations (color-contrast ×2, image-alt ×2, label ×2, button-name ×2, heading-order ×1) instead of the same rule firing on many elements
+
+### Changed
+- Report structure: impact moved back to bullet point, ACC issues show Element (short) + Full path (full CSS selector), non-ACC issues show Location, Rule renamed to Reference
+
 ### Added
 - `docs/index.html` — single-page ToolShop e-commerce test site with deliberate issues across all five audit modules (missing alt text, no cookie consent, broken links, missing security headers, no privacy policy)
 - `config-examples/` folder with five named configs (accessibility, privacy, security-headers, broken-links, full) all pointed at the GitHub Pages test site

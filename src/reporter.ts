@@ -86,6 +86,10 @@ function reportTitle(result: AuditResult): string {
   return 'Audit Report';
 }
 
+function shortLocation(location: string): string {
+  return location.split('>').pop()?.trim() ?? location;
+}
+
 function buildReport(result: AuditResult, issues: Issue[]): string {
   const lines: string[] = [];
 
@@ -101,11 +105,17 @@ function buildReport(result: AuditResult, issues: Issue[]): string {
     lines.push(`## ${MODULE_LABELS[prefix]}\n`);
 
     for (const issue of moduleIssues) {
-      lines.push(`### ${issue.id} · ${issue.impact}\n`);
+      lines.push(`### ${issue.id}\n`);
+      lines.push(`- **Impact:** ${issue.impact}`);
       lines.push(`- **Issue:** ${issue.description}`);
-      lines.push(`- **Element:** \`${issue.location}\``);
+      if (issue.prefix === 'ACC') {
+        lines.push(`- **Element:** \`${shortLocation(issue.location)}\``);
+        lines.push(`- **Full path:** \`${issue.location}\``);
+      } else {
+        lines.push(`- **Location:** \`${issue.location}\``);
+      }
       lines.push(`- **URL:** ${issue.pageUrl}`);
-      lines.push(`- **Rule:** ${issue.docLink}`);
+      lines.push(`- **Reference:** ${issue.docLink}`);
       lines.push(`- **Fix:** ${issue.remediation}`);
       lines.push('');
     }
