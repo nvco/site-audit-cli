@@ -1,4 +1,35 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+
+# Generated reports
 reports/
+
+# Local config (copy from config-examples/)
 config.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+Thumbs.db
+ehthumbs.db
