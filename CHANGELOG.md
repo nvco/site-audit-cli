@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-05-01
+
+### Added
+- `docs/index.html` — single-page ToolShop e-commerce test site with deliberate issues across all five audit modules (missing alt text, no cookie consent, broken links, missing security headers, no privacy policy)
+- `config-examples/` folder with five named configs (accessibility, privacy, security-headers, broken-links, full) all pointed at the GitHub Pages test site
+- PDF command (`src/pdf.ts`) — converts existing markdown reports to PDF via md-to-pdf
+
+### Changed
+- Report merged into a single file — fix detail now included inline under each issue, remediation file removed
+- Issue headings restructured: ID + impact in H3, Issue/Element/URL/Rule/Fix as bullet points
+- H1 title reflects the audit scope — single module runs show e.g. "Audit Report: Accessibility"
+- Config file path is now an optional CLI argument — defaults to `config.json` if omitted
+- `maxPages` default set to 5 across all config examples
+
+### Removed
+- Separate remediation file — content merged into the main report
+
 ## 2026-04-30
 
 ### Added

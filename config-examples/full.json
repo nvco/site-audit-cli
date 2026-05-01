@@ -11,15 +11,14 @@
     "brokenLinks": true
   },
   "crawl": {
-    "depth": 1,
+    "depth": 2,
     "maxPages": 5
   },
   "brokenLinks": {
     "includeExternal": false
   },
-  "suppress": [
-  ],
+  "suppress": [],
   "urls": [
-    "https://example.com"
+    "https://nvco.github.io/site-audit-cli/"
   ]
 }

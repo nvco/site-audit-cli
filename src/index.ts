@@ -14,7 +14,8 @@ async function main() {
     return;
   }
 
-  const config = loadConfig();
+  const configPath = args[0];
+  const config = loadConfig(configPath);
   const mode = config.urls.length === 1 ? 'crawl' : 'list';
   console.log(`site-audit-cli v${require('../package.json').version}`);
   console.log(`Mode: ${mode} | URLs: ${config.urls.length} | WCAG ${config.wcag.version} Level ${config.wcag.level}`);
@@ -23,11 +24,10 @@ async function main() {
   const result = await runAudit(config);
 
   const { generateReports } = await import('./reporter');
-  const { reportPath, remediationPath } = await generateReports(result, 'reports');
+  const { reportPath } = await generateReports(result, 'reports');
 
   console.log(`\nAudit complete — ${result.pagesAudited.length} page(s) audited, ${result.issues.length} issue(s) found`);
-  console.log(`  Report:      ${reportPath}`);
-  console.log(`  Remediation: ${remediationPath}`);
+  console.log(`  Report: ${reportPath}`);
 }
 
 main().catch((err) => {

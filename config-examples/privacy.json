@@ -4,11 +4,11 @@
     "level": "AA"
   },
   "modules": {
-    "accessibility": true,
+    "accessibility": false,
     "privacy": true,
     "cookies": true,
-    "securityHeaders": true,
-    "brokenLinks": true
+    "securityHeaders": false,
+    "brokenLinks": false
   },
   "crawl": {
     "depth": 1,
@@ -17,9 +17,8 @@
   "brokenLinks": {
     "includeExternal": false
   },
-  "suppress": [
-  ],
+  "suppress": [],
   "urls": [
-    "https://example.com"
+    "https://nvco.github.io/site-audit-cli/"
   ]
 }

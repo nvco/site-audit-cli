@@ -13,19 +13,17 @@ const MODULE_LABELS: Record<IssuePrefix, string> = {
 const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'LNK'];
 const IMPACT_ORDER: ImpactLevel[] = ['critical', 'serious', 'moderate', 'minor'];
 
-export async function generateReports(result: AuditResult, outputDir: string): Promise<{ reportPath: string; remediationPath: string }> {
+export async function generateReports(result: AuditResult, outputDir: string): Promise<{ reportPath: string }> {
   fs.mkdirSync(outputDir, { recursive: true });
 
   const base = deriveBaseName(result);
   const reportPath = path.join(outputDir, `${base}-report.md`);
-  const remediationPath = path.join(outputDir, `${base}-remediation.md`);
 
   const sorted = sortIssues(result.issues);
 
   fs.writeFileSync(reportPath, buildReport(result, sorted));
-  fs.writeFileSync(remediationPath, buildRemediation(result, sorted));
 
-  return { reportPath, remediationPath };
+  return { reportPath };
 }
 
 function deriveBaseName(result: AuditResult): string {
@@ -46,7 +44,6 @@ function header(result: AuditResult): string {
   const urls = result.config.urls.join(', ');
   const date = result.runDate.slice(0, 10);
   const { version, level } = result.config.wcag;
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
   const toolVersion = require('../package.json').version as string;
 
   return [
@@ -78,10 +75,21 @@ function scorecard(issues: Issue[]): string {
   return rows.join('\n') + '\n';
 }
 
+function reportTitle(result: AuditResult): string {
+  const enabledModules = PREFIX_ORDER.filter((p) => {
+    const key = ({ ACC: 'accessibility', PRI: 'privacy', COO: 'cookies', SEC: 'securityHeaders', LNK: 'brokenLinks' } as Record<IssuePrefix, keyof typeof result.config.modules>)[p];
+    return result.config.modules[key];
+  });
+  if (enabledModules.length === 1) {
+    return `Audit Report: ${MODULE_LABELS[enabledModules[0]]}`;
+  }
+  return 'Audit Report';
+}
+
 function buildReport(result: AuditResult, issues: Issue[]): string {
   const lines: string[] = [];
 
-  lines.push('# Audit Report\n');
+  lines.push(`# ${reportTitle(result)}\n`);
   lines.push(header(result));
   lines.push('## Summary\n');
   lines.push(scorecard(issues));
@@ -93,36 +101,12 @@ function buildReport(result: AuditResult, issues: Issue[]): string {
     lines.push(`## ${MODULE_LABELS[prefix]}\n`);
 
     for (const issue of moduleIssues) {
-      lines.push(`### ${issue.id} — ${issue.description}\n`);
-      lines.push(`- **Impact:** ${issue.impact}`);
-      lines.push(`- **Location:** \`${issue.location}\``);
-      lines.push(`- **Reference:** ${issue.docLink}`);
-      lines.push('');
-    }
-  }
-
-  return lines.join('\n');
-}
-
-function buildRemediation(result: AuditResult, issues: Issue[]): string {
-  const lines: string[] = [];
-
-  lines.push('# Remediation Guide\n');
-  lines.push(header(result));
-
-  for (const prefix of PREFIX_ORDER) {
-    const moduleIssues = issues.filter((i) => i.prefix === prefix);
-    if (moduleIssues.length === 0) continue;
-
-    lines.push(`## ${MODULE_LABELS[prefix]}\n`);
-
-    for (const issue of moduleIssues) {
-      lines.push(`### ${issue.id} — ${issue.description}\n`);
-      lines.push(`- **Impact:** ${issue.impact}`);
-      lines.push(`- **Location:** \`${issue.location}\``);
-      lines.push(`- **Reference:** ${issue.docLink}`);
-      lines.push('');
-      lines.push(issue.remediation);
+      lines.push(`### ${issue.id} · ${issue.impact}\n`);
+      lines.push(`- **Issue:** ${issue.description}`);
+      lines.push(`- **Element:** \`${issue.location}\``);
+      lines.push(`- **URL:** ${issue.pageUrl}`);
+      lines.push(`- **Rule:** ${issue.docLink}`);
+      lines.push(`- **Fix:** ${issue.remediation}`);
       lines.push('');
     }
   }
