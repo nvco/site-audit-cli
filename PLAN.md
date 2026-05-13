@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A CLI web audit tool built in TypeScript using Playwright that audits websites across five areas: accessibility, privacy compliance, cookies, security headers, and broken links. Designed to demonstrate professional-grade use of TypeScript, Playwright, and axe-core. Runs in Docker so anyone with Docker installed can use it without any local setup.
+A CLI web audit tool built in TypeScript using Playwright that audits websites across five areas: accessibility, privacy compliance, cookies, security headers, and broken links. Designed to demonstrate professional-grade use of TypeScript, Playwright, and axe-core. Supports two run modes: local (Node.js + npm) for development and quick iteration, and Docker for zero-setup usage and CI/CD pipelines.
 
 ---
 
@@ -20,15 +20,45 @@ A CLI web audit tool built in TypeScript using Playwright that audits websites a
 
 ## CLI Commands
 
+**Local (Node.js):**
 ```bash
-# Run the full audit (reads config.json for all settings)
-docker compose up
+npm install
+npx playwright install chromium
 
-# Generate PDFs from an existing report (separate step, after reviewing markdown)
+node dist/index.js                      # uses config.json by default
+node dist/index.js sdet.json            # point at a named config profile
+node dist/index.js compliance.json
+node dist/index.js pdf reports/example-com-2026-04-30
+```
+
+**Docker:**
+```bash
+docker compose up                       # uses config.json by default
+
+docker compose run site-audit-cli sdet.json
+docker compose run site-audit-cli compliance.json
 docker compose run site-audit-cli pdf reports/example-com-2026-04-30
 ```
 
-There are no CLI flags or arguments for the audit run. Everything is configured in `config.json`. PDF generation is a deliberate separate step — you inspect the markdown first, then generate PDFs when satisfied.
+There are no CLI flags or arguments for the audit run. Everything is configured in the config file. The only optional argument is a path to a config file — if omitted, defaults to `config.json` in the current directory. PDF generation is a deliberate separate step — you inspect the markdown first, then generate PDFs when satisfied.
+
+---
+
+## Config Profiles
+
+Two tiers of config files serve different purposes:
+
+**Root profiles** — ready-to-use entry points, pick one and edit it:
+
+| File | Audience | Modules |
+|---|---|---|
+| `sdet.json` | CI/CD pipelines, regression catching | security-headers, broken-links, cookies, SSL/TLS |
+| `compliance.json` | GDPR/WCAG audits, client-facing reports | accessibility, privacy, cookies |
+| `full.json` | Comprehensive site health | all modules + scoring |
+
+> These files need to be created in the root folder (tracked in Phase 7 polish work).
+
+**`config-examples/`** — single-module reference configs for development and targeted testing. Not meant as entry points — use them to understand how to configure individual modules in isolation.
 
 ---
 
@@ -206,9 +236,15 @@ interface Issue {
 
 ---
 
-## Docker Setup
+## Running the Tool
 
-The Docker image includes Node.js, all npm dependencies, and Playwright's Chromium browser. The user never installs anything locally.
+### Local
+
+Requires Node.js 20+ and npm. After `npm install` and `npx playwright install chromium`, run via `node dist/index.js`. Good for development and quick local testing.
+
+### Docker
+
+The Docker image bundles Node.js, all npm dependencies, and Playwright's Chromium — no local setup required beyond Docker itself. Preferred for CI/CD pipelines and sharing with teams.
 
 `docker-compose.yml` pre-configures two volume mounts:
 - `./config.json` → `/app/config.json` (read by the tool)
@@ -229,3 +265,155 @@ Phases are implemented sequentially. Each phase gets its own TODO file (e.g., `t
 | 5 | Reporter — markdown report and remediation file generation | `todo-05-reporter.md` |
 | 6 | PDF command | `todo-06-pdf.md` |
 | 7 | Polish — error handling, README, config.example.json, final Docker testing | `todo-07-polish.md` |
+| 8 | CI/CD readiness — exit codes, JSON output, scoring, root profiles, README | `todo-08-cicd.md` |
+| 9 | Security additions — SSL/TLS checker, Permissions-Policy, mixed content | `todo-09-security.md` |
+| 10 | Accessibility & cookie additions — EN 301 549 support, SameSite, cookie expiry | `todo-10-accessibility-cookies.md` |
+| 11 | Regression detection — diff against last run | `todo-11-regression.md` |
+
+---
+
+## Planned Features
+
+### Phase 8 — CI/CD Readiness (P1)
+
+These three features are tightly coupled and should be implemented together as one phase.
+
+**Exit codes**
+
+| Code | Meaning |
+|---|---|
+| `0` | Audit passed — no violations above configured threshold |
+| `1` | Violations found — audit failed |
+| `2` | Tool error (network failure, invalid config, etc.) |
+
+**Module-level scoring**
+
+Per-module pass/fail percentage and letter grade. Affects both JSON output and the markdown report summary. Score formula: `(passing rules / total rules) * 100`, rounded.
+
+Grade thresholds (configurable via `thresholds` in config):
+
+| Grade | Score |
+|---|---|
+| A | ≥ 90 |
+| B | ≥ 75 |
+| C | ≥ 60 |
+| D | < 60 |
+
+**JSON output format**
+
+Configured in the config file:
+
+```json
+{
+  "output": {
+    "format": "json",
+    "file": "audit.json"
+  }
+}
+```
+
+Output shape:
+
+```json
+{
+  "url": "https://example.com",
+  "date": "2026-05-12",
+  "overall": { "score": 80, "grade": "B" },
+  "modules": {
+    "accessibility": { "score": 62, "grade": "D", "issues": [] },
+    "security":      { "score": 78, "grade": "B", "issues": [] },
+    "privacy":       { "score": 91, "grade": "A", "issues": [] },
+    "cookies":       { "score": 70, "grade": "C", "issues": [] },
+    "links":         { "score": 100, "grade": "A", "issues": [] }
+  }
+}
+```
+
+**GitHub Actions example** (to add to README):
+
+```yaml
+name: Site Audit
+on: [push, pull_request]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: npm ci && npx playwright install chromium
+      - run: node dist/index.js ci.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: audit.json
+```
+
+**Root config profiles** — `sdet.json`, `compliance.json`, `full.json` created in root folder (see Config Profiles section).
+
+**README** — initial version written alongside Phase 8. Sections: one-line description, three entry points with commands, feature table, quick start, GitHub Actions example, config reference, link to `docs/index.html` as live demo. Will be refined in later phases as features are added.
+
+---
+
+### Phase 9 — Security Module Additions (P2)
+
+**SSL/TLS checker** — new `src/auditors/ssl.ts`. Does not use Playwright; connects directly via Node's `tls` module.
+
+| Check ID | What it tests | Implementation |
+|---|---|---|
+| `cert-expiry` | Certificate expires within 30 days → warning; expired → fail | `tls.connect()` → `getPeerCertificate().valid_to` |
+| `tls-version` | TLS 1.0 / 1.1 accepted → fail; TLS 1.2+ only → pass | `tls.connect({ maxVersion: 'TLSv1.1' })` — if it connects, flag it |
+| `https-redirect` | HTTP redirects to HTTPS with 301 | Plain HTTP fetch, follow redirect, check final protocol and status |
+
+**Additional security headers** — extend existing `src/auditors/security-headers.ts`:
+
+| Header | Why it matters | Pass condition |
+|---|---|---|
+| `Permissions-Policy` | Controls browser feature access (camera, mic, geolocation) | Header present with at least one directive |
+| Mixed Content | HTTPS page loading HTTP resources | No `http://` resource URLs on an `https://` page — detected via `page.on('request')` in Playwright |
+
+---
+
+### Phase 10 — Accessibility & Cookie Additions (P2)
+
+**EN 301 549 support** — new `"standard"` field in config, accepted values `"wcag"` (default) and `"en301549"`.
+
+The underlying axe-core scan is identical either way. In `en301549` mode, findings are split using axe-core's existing EN 301 549 tag data:
+
+| Group | Contains | Effect |
+|---|---|---|
+| Compliance failures | Violations mapping to an EN 301 549 criterion | Affect score and exit code |
+| Informational | Best-practice-only violations (no criterion mapping) | Reported but don't block CI |
+
+Each finding shows both IDs where available: `WCAG 1.4.3 / EN 301 549 §9.1.4.3`. No new dependencies — classification pass in the reporter over axe-core's existing tag data.
+
+**Cookie additions** — extend existing `src/auditors/cookies.ts`. Both readable from Playwright's `context.cookies()`, no new dependencies.
+
+| Check ID | What it tests | Why it matters |
+|---|---|---|
+| `samesite-flag` | Cookie missing `SameSite`, or `SameSite=None` without `Secure` | CSRF vector; flagged in GDPR/ePrivacy audits |
+| `cookie-expiry` | Persistent cookies with lifetime > 1 year | GDPR data minimisation — long-lived tracking cookies need consent |
+
+---
+
+### Phase 11 — Regression Detection (P3)
+
+Save a `.last-run.json` after each audit. On subsequent runs, diff current results against it and flag new violations separately from pre-existing ones.
+
+Config:
+
+```json
+{
+  "compareLastRun": true
+}
+```
+
+Output example:
+```
+2 NEW violations since last run (2026-05-10)
+  [NEW] SEC-003 — X-Frame-Options missing
+  [NEW] ACC-007 — Missing alt text on /about
+```
+
+One file, not a full archive. Solves a real regression-testing use case without a full persistence model.

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-05-13
+
+### Changed
+- PLAN.md updated with local + Docker dual run mode support
+- CLI Commands section now shows both `node dist/index.js` and `docker compose` usage
+- Config Profiles section added — three root profiles (`sdet.json`, `compliance.json`, `full.json`) as primary entry points, `config-examples/` clarified as single-module reference configs
+- Phases table extended to include phases 8–11
+- Planned Features section added covering CI/CD readiness (Phase 8), security additions (Phase 9), accessibility/cookie additions (Phase 10), and regression detection (Phase 11)
+
 ## 2026-05-01
 
 ### Fixed
