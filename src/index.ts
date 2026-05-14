@@ -7,7 +7,7 @@ async function main() {
     const reportBase = args[1];
     if (!reportBase) {
       console.error('Usage: site-audit-cli pdf reports/<report-base-name>');
-      process.exit(1);
+      process.exit(2);
     }
     const { generatePdfs } = await import('./pdf');
     await generatePdfs(reportBase);
@@ -32,5 +32,5 @@ async function main() {
 
 main().catch((err) => {
   console.error(err instanceof Error ? err.message : err);
-  process.exit(1);
+  process.exit(2);
 });

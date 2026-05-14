@@ -59,7 +59,8 @@ export async function runAudit(config: Config): Promise<AuditResult> {
   await browser.close();
 
   const suppressed = applySuppress(rawIssues, config);
-  const issues = assignIds(suppressed);
+  const sorted = sortIssues(suppressed);
+  const issues = assignIds(sorted);
 
   return {
     config,
@@ -69,6 +70,17 @@ export async function runAudit(config: Config): Promise<AuditResult> {
   };
 }
 
+
+const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'LNK'];
+const IMPACT_ORDER = ['critical', 'serious', 'moderate', 'minor'];
+
+function sortIssues(issues: Issue[]): Issue[] {
+  return [...issues].sort((a, b) => {
+    const prefixDiff = PREFIX_ORDER.indexOf(a.prefix) - PREFIX_ORDER.indexOf(b.prefix);
+    if (prefixDiff !== 0) return prefixDiff;
+    return IMPACT_ORDER.indexOf(a.impact) - IMPACT_ORDER.indexOf(b.impact);
+  });
+}
 
 function applySuppress(issues: Issue[], config: Config): Issue[] {
   if (config.suppress.length === 0) return issues;

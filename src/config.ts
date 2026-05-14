@@ -25,21 +25,21 @@ function validate(raw: unknown, filePath: string): Config {
   const required = ['wcag', 'modules', 'crawl', 'brokenLinks', 'suppress', 'urls'];
   for (const key of required) {
     if (!(key in c)) {
-      throw new Error(`config.json is missing required field: "${key}"`);
+      throw new Error(`${filePath} is missing required field: "${key}"`);
     }
   }
 
   const urls = c['urls'] as string[];
   if (!Array.isArray(urls) || urls.length === 0) {
-    throw new Error('config.json "urls" must be a non-empty array of URLs.');
+    throw new Error(`${filePath} "urls" must be a non-empty array of URLs.`);
   }
 
   const wcag = c['wcag'] as Record<string, string>;
   if (!['2.0', '2.1', '2.2'].includes(wcag['version'])) {
-    throw new Error(`config.json "wcag.version" must be "2.0", "2.1", or "2.2".`);
+    throw new Error(`${filePath} "wcag.version" must be "2.0", "2.1", or "2.2".`);
   }
   if (!['A', 'AA', 'AAA'].includes(wcag['level'])) {
-    throw new Error(`config.json "wcag.level" must be "A", "AA", or "AAA".`);
+    throw new Error(`${filePath} "wcag.level" must be "A", "AA", or "AAA".`);
   }
 
   return c as unknown as Config;

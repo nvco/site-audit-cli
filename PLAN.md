@@ -13,7 +13,7 @@ A CLI web audit tool built in TypeScript using Playwright that audits websites a
 | TypeScript | Language |
 | Playwright | Headless browser automation (not the test runner — used as a library) |
 | axe-core | Accessibility analysis, injected into pages via Playwright |
-| md-to-pdf | Converts finished markdown reports to PDF |
+| md-to-pdf | Converts markdown reports to PDF (or Playwright-based HTML→PDF) |
 | Docker + Docker Compose | Packaging and portability |
 
 ---
@@ -28,7 +28,6 @@ npx playwright install chromium
 node dist/index.js                      # uses config.json by default
 node dist/index.js sdet.json            # point at a named config profile
 node dist/index.js compliance.json
-node dist/index.js pdf reports/example-com-2026-04-30
 ```
 
 **Docker:**
@@ -37,10 +36,9 @@ docker compose up                       # uses config.json by default
 
 docker compose run site-audit-cli sdet.json
 docker compose run site-audit-cli compliance.json
-docker compose run site-audit-cli pdf reports/example-com-2026-04-30
 ```
 
-There are no CLI flags or arguments for the audit run. Everything is configured in the config file. The only optional argument is a path to a config file — if omitted, defaults to `config.json` in the current directory. PDF generation is a deliberate separate step — you inspect the markdown first, then generate PDFs when satisfied.
+There are no CLI flags or arguments. Everything is configured in the config file. The only optional argument is a path to a config file — if omitted, defaults to `config.json` in the current directory. All configured output formats are generated automatically at the end of every run.
 
 ---
 
@@ -56,7 +54,7 @@ Two tiers of config files serve different purposes:
 | `compliance.json` | GDPR/WCAG audits, client-facing reports | accessibility, privacy, cookies |
 | `full.json` | Comprehensive site health | all modules + scoring |
 
-> These files need to be created in the root folder (tracked in Phase 7 polish work).
+> These files need to be created in the root folder (tracked in Phase 9 CI/CD work).
 
 **`config-examples/`** — single-module reference configs for development and targeted testing. Not meant as entry points — use them to understand how to configure individual modules in isolation.
 
@@ -86,6 +84,14 @@ All settings live in a single `config.json` in the project root. Below is the fu
   "brokenLinks": {
     "includeExternal": false  // true to also check outgoing external links
   },
+  "output": {
+    "formats": {
+      "markdown": true,   // scannable text report
+      "html": true,       // styled report, also used for PDF generation
+      "pdf": true,        // generated from the HTML report automatically
+      "json": true        // machine-readable, used for CI/CD exit code logic
+    }
+  },
   "suppress": [
     // Suppress known accepted issues by rule + URL pattern.
     // Suppressed issues are excluded from all reports.
@@ -110,19 +116,33 @@ All settings live in a single `config.json` in the project root. Below is the fu
 
 ## Output
 
-### File naming
+### Folder structure
 
-Both output files share a base name derived from the primary URL and the run date:
-`{hostname-slug}-{YYYY-MM-DD}` → e.g., `example-com-2026-04-30`
+Each run writes its output into a timestamped subfolder under `reports/`:
+
+```
+reports/
+└── 20260514-143022/
+    ├── report.md
+    ├── report.html
+    ├── report.pdf
+    └── report.json
+```
+
+The timestamp format is `YYYYMMDD-HHmmss`. This keeps runs self-contained, makes side-by-side comparison easy, and avoids filename collisions when running multiple audits in a day.
 
 ### Files generated per run
 
+All formats are enabled by default. Users disable formats they don't need via `output.formats` in config.
+
 | File | Purpose |
 |---|---|
-| `reports/example-com-2026-04-30-report.md` | Main audit report — scannable, sorted by severity |
-| `reports/example-com-2026-04-30-remediation.md` | Developer remediation guide keyed to same IDs |
+| `report.md` | Scannable markdown report, sorted by severity |
+| `report.html` | Styled HTML report — colour-coded by severity, readable in any browser |
+| `report.pdf` | Generated automatically from the HTML report via Playwright |
+| `report.json` | Machine-readable output for CI/CD pipelines and tooling |
 
-PDF versions (`-report.pdf`, `-remediation.pdf`) are generated on demand via the `pdf` command.
+> The separate `pdf` subcommand has been removed — PDF is now just another output format generated at the end of every run.
 
 ### Report structure
 
@@ -263,18 +283,48 @@ Phases are implemented sequentially. Each phase gets its own TODO file (e.g., `t
 | 3 | Auditors — all five modules | `todo-03-auditors.md` |
 | 4 | Runner — orchestration, suppress list, ID assignment | `todo-04-runner.md` |
 | 5 | Reporter — markdown report and remediation file generation | `todo-05-reporter.md` |
-| 6 | PDF command | `todo-06-pdf.md` |
-| 7 | Polish — error handling, README, config.example.json, final Docker testing | `todo-07-polish.md` |
-| 8 | CI/CD readiness — exit codes, JSON output, scoring, root profiles, README | `todo-08-cicd.md` |
-| 9 | Security additions — SSL/TLS checker, Permissions-Policy, mixed content | `todo-09-security.md` |
-| 10 | Accessibility & cookie additions — EN 301 549 support, SameSite, cookie expiry | `todo-10-accessibility-cookies.md` |
-| 11 | Regression detection — diff against last run | `todo-11-regression.md` |
+| 6 | PDF command *(superseded by Phase 8 output formats)* | `todo-06-pdf.md` |
+| 7 | Polish — error handling, config.example.json, local end-to-end testing | `todo-07-polish.md` |
+| 8 | Output formats — timestamped folders, HTML report, auto PDF, JSON, remove pdf subcommand | `todo-08-output-formats.md` |
+| 9 | CI/CD readiness — exit codes, scoring, root profiles, README | `todo-09-cicd.md` |
+| 10 | Security additions — SSL/TLS checker, Permissions-Policy, mixed content | `todo-10-security.md` |
+| 11 | Accessibility & cookie additions — EN 301 549 support, SameSite, cookie expiry | `todo-11-accessibility-cookies.md` |
+| 12 | Regression detection — diff against last run | `todo-12-regression.md` |
+| 13 | Docker — final packaging, docker-compose verification, end-to-end Docker testing | `todo-13-docker.md` |
 
 ---
 
 ## Planned Features
 
-### Phase 8 — CI/CD Readiness (P1)
+### Phase 8 — Output Formats (P1)
+
+Replaces the old `pdf` subcommand. All formats generated automatically at end of each run.
+
+**Timestamped output folders** — each run writes to `reports/YYYYMMDD-HHmmss/`. No more filename-encoded dates.
+
+**HTML report** — styled, colour-coded by severity (critical = red, serious = orange, moderate = yellow, minor = grey). Self-contained single file with inline CSS. Used as the source for PDF generation.
+
+**Automatic PDF** — generated from the HTML report via Playwright (already running). Replaces `md-to-pdf`. No separate command needed.
+
+**JSON output** — machine-readable format for CI/CD pipelines. Schema defined in Phase 9.
+
+**Config:**
+```json
+"output": {
+  "formats": {
+    "markdown": true,
+    "html": true,
+    "pdf": true,
+    "json": true
+  }
+}
+```
+
+**Remove `pdf` subcommand** — `src/pdf.ts` deleted, `index.ts` simplified.
+
+---
+
+### Phase 9 — CI/CD Readiness (P1)
 
 These three features are tightly coupled and should be implemented together as one phase.
 
@@ -356,7 +406,7 @@ jobs:
 
 ---
 
-### Phase 9 — Security Module Additions (P2)
+### Phase 10 — Security Module Additions (P2)
 
 **SSL/TLS checker** — new `src/auditors/ssl.ts`. Does not use Playwright; connects directly via Node's `tls` module.
 
@@ -375,7 +425,7 @@ jobs:
 
 ---
 
-### Phase 10 — Accessibility & Cookie Additions (P2)
+### Phase 11 — Accessibility & Cookie Additions (P2)
 
 **EN 301 549 support** — new `"standard"` field in config, accepted values `"wcag"` (default) and `"en301549"`.
 
@@ -397,7 +447,7 @@ Each finding shows both IDs where available: `WCAG 1.4.3 / EN 301 549 §9.1.4.3`
 
 ---
 
-### Phase 11 — Regression Detection (P3)
+### Phase 12 — Regression Detection (P3)
 
 Save a `.last-run.json` after each audit. On subsequent runs, diff current results against it and flag new violations separately from pre-existing ones.
 

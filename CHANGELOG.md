@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-05-14
+
+### Added
+- `todo-07-polish.md` — Phase 7 task list covering error handling, config review, and local end-to-end testing
+
+### Changed
+- PLAN.md: output formats redesigned — timestamped run folders (`reports/YYYYMMDD-HHmmss/`), four formats (markdown, HTML, PDF, JSON) all on by default via `output.formats` config, PDF now automatic (no separate subcommand)
+- PLAN.md: `pdf` subcommand removed from CLI Commands; Phase 6 noted as superseded; new Phase 8 (output formats) inserted; downstream phases renumbered to 9–13
+- PLAN.md: Output section rewritten to reflect new folder structure and format files
+- PLAN.md: `output.formats` block added to config schema
+- `config.example.json`: URL updated to point at the GitHub Pages test site
+- `src/config.ts`: error messages now show the actual config file path instead of hardcoded `config.json`
+- `src/index.ts`: tool errors now exit with code `2` (tool error) instead of `1`, prepping for Phase 9 exit code semantics
+- `src/runner.ts`: issues now sorted by prefix then severity before ID assignment, so IDs reflect display order
+
+### Fixed
+- Issue IDs were assigned before sorting, causing critical issues to appear with high ID numbers; fixed by sorting before `assignIds()`
+
 ## 2026-05-13
 
 ### Changed
