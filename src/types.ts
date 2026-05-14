@@ -18,6 +18,13 @@ export interface SuppressRule {
   url: string;
 }
 
+export interface OutputFormats {
+  markdown: boolean;
+  html: boolean;
+  pdf: boolean;
+  json: boolean;
+}
+
 export interface Config {
   wcag: {
     version: '2.0' | '2.1' | '2.2';
@@ -36,6 +43,9 @@ export interface Config {
   };
   brokenLinks: {
     includeExternal: boolean;
+  };
+  output: {
+    formats: OutputFormats;
   };
   suppress: SuppressRule[];
   urls: string[];

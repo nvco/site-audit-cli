@@ -17,6 +17,14 @@
   "brokenLinks": {
     "includeExternal": false
   },
+  "output": {
+    "formats": {
+      "markdown": true,
+      "html": true,
+      "pdf": true,
+      "json": true
+    }
+  },
   "suppress": [],
   "urls": [
     "https://nvco.github.io/site-audit-cli/"

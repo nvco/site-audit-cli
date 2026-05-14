@@ -42,5 +42,17 @@ function validate(raw: unknown, filePath: string): Config {
     throw new Error(`${filePath} "wcag.level" must be "A", "AA", or "AAA".`);
   }
 
+  if (!c['output']) {
+    c['output'] = { formats: { markdown: true, html: true, pdf: true, json: true } };
+  } else {
+    const formats = (c['output'] as Record<string, unknown>)['formats'] as Record<string, unknown> ?? {};
+    (c['output'] as Record<string, unknown>)['formats'] = {
+      markdown: formats['markdown'] !== false,
+      html: formats['html'] !== false,
+      pdf: formats['pdf'] !== false,
+      json: formats['json'] !== false,
+    };
+  }
+
   return c as unknown as Config;
 }

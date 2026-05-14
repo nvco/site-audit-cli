@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-05-14 (Phase 8)
+
+### Added
+- HTML report — styled, colour-coded by severity (critical/serious/moderate/minor), self-contained with inline CSS
+- JSON report — machine-readable output with all issue data, suitable for CI/CD tooling
+- PDF report — generated automatically from HTML via Playwright; `page-break-inside: avoid` keeps issue cards intact; white background and no outer padding in print mode
+- `output.formats` config field — all four formats (markdown, html, pdf, json) enabled by default; disable individually as needed
+- Timestamped run folders — each run writes to `reports/YYYYMMDD-HHmmss/` instead of flat files
+- `todo-08-output-formats.md` — Phase 8 task list
+
+### Changed
+- Reporter completely rewritten to support multiple output formats and timestamped folders
+- `src/types.ts` — added `OutputFormats` interface and `output.formats` to `Config`
+- `src/config.ts` — defaults `output.formats` to all-true if field is absent from config
+- `src/index.ts` — simplified; removed `pdf` subcommand, updated console output to list all generated files
+- `config.example.json` and all `config-examples/` files updated with `output.formats` block
+
+### Removed
+- `src/pdf.ts` — superseded by automatic PDF generation in reporter
+- `md-to-pdf` dependency — replaced by Playwright's built-in `page.pdf()`
+- `pdf` subcommand — PDF is now just another output format, no separate command needed
+
 ## 2026-05-14
 
 ### Added
