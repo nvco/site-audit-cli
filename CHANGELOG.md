@@ -3,7 +3,7 @@
 ## 2026-05-14
 
 ### Added
-- `todo-07-polish.md` — Phase 7 task list covering error handling, config review, and local end-to-end testing
+- `todo-07-polish.md` — Phase 7 task list covering error handling, config review, and local end-to-end testing (now archived — phase complete)
 
 ### Changed
 - PLAN.md: output formats redesigned — timestamped run folders (`reports/YYYYMMDD-HHmmss/`), four formats (markdown, HTML, PDF, JSON) all on by default via `output.formats` config, PDF now automatic (no separate subcommand)
