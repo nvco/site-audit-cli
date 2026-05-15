@@ -120,7 +120,7 @@ jobs:
 
 ## Configuration reference
 
-```jsonc
+```json
 {
   "modules": {
     "accessibility": {

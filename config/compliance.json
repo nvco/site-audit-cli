@@ -2,16 +2,29 @@
   "modules": {
     "accessibility": {
       "enabled": true,
-      "wcag": { "version": "2.2", "level": "AA" },
-      "standard": "wcag"
+      "standard": "wcag",
+      "wcag": {
+        "version": "2.2",
+        "level": "AA"
+      }
     },
-    "privacy": { "enabled": true },
-    "cookies": { "enabled": true },
-    "securityHeaders": { "enabled": false },
-    "ssl": { "enabled": true },
-    "brokenLinks": { "enabled": false }
+    "privacy": {
+      "enabled": true
+    },
+    "cookies": {
+      "enabled": true
+    },
+    "securityHeaders": {
+      "enabled": false
+    },
+    "ssl": {
+      "enabled": true
+    },
+    "brokenLinks": {
+      "enabled": false,
+      "includeExternal": false
+    }
   },
-  "crawl": { "depth": 2, "maxPages": 10 },
   "output": {
     "formats": {
       "markdown": true,
@@ -20,7 +33,12 @@
       "json": true
     }
   },
+  "compareLastRun": false,
   "suppress": [],
+  "crawl": {
+    "depth": 2,
+    "maxPages": 10
+  },
   "urls": [
     "https://nvco.github.io/site-audit-cli/"
   ]

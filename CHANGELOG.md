@@ -2,6 +2,10 @@
 
 ## 2026-05-15
 
+### Changed
+- Config profiles (`config/full.json`, `config/compliance.json`, `config/sdet.json`) reformatted — all module objects expanded to multi-line; field order aligned with README (`modules` → `output` → `compareLastRun` → `suppress` → `crawl` → `urls`); `standard` moved before `wcag` inside accessibility
+- README configuration reference updated to match new field order and object style; code block changed from `jsonc` to `json`
+
 ### Added
 - `maxPages: 0` support in crawler — setting `crawl.maxPages` to `0` disables the page cap and crawls the full site; documented in README config reference
 
