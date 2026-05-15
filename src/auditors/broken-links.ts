@@ -1,7 +1,7 @@
 import { Page } from 'playwright';
-import { Config, Issue } from '../types';
+import { Config, Issue, AuditModuleResult } from '../types';
 
-export async function runBrokenLinksAudit(page: Page, config: Config): Promise<Issue[]> {
+export async function runBrokenLinksAudit(page: Page, config: Config): Promise<AuditModuleResult> {
   const issues: Issue[] = [];
   const pageUrl = page.url();
   const pageOrigin = new URL(pageUrl).origin;
@@ -26,6 +26,8 @@ export async function runBrokenLinksAudit(page: Page, config: Config): Promise<I
     }
   }
 
+  const totalChecks = toCheck.size;
+
   await Promise.all([...toCheck].map(async (url) => {
     try {
       let status = await headRequest(page, url);
@@ -49,7 +51,7 @@ export async function runBrokenLinksAudit(page: Page, config: Config): Promise<I
     }
   }));
 
-  return issues;
+  return { issues, totalChecks };
 }
 
 async function headRequest(page: Page, url: string): Promise<number> {

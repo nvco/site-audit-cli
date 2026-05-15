@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { chromium } from 'playwright';
-import { AuditResult, Issue, IssuePrefix, ImpactLevel } from './types';
+import { AuditResult, Issue, IssuePrefix, ImpactLevel, ModuleScore } from './types';
 
 const MODULE_LABELS: Record<IssuePrefix, string> = {
   ACC: 'Accessibility',
@@ -94,7 +94,7 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
   lines.push(`**WCAG:** ${version} Level ${level}`);
   lines.push('');
   lines.push('## Summary\n');
-  lines.push(markdownScorecard(issues));
+  lines.push(markdownScorecard(result));
 
   for (const prefix of PREFIX_ORDER) {
     const moduleIssues = issues.filter((i) => i.prefix === prefix);
@@ -120,19 +120,21 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
   return lines.join('\n');
 }
 
-function markdownScorecard(issues: Issue[]): string {
+function markdownScorecard(result: AuditResult): string {
+  const { issues, moduleScores, overallScore } = result;
   const rows = [
-    '| Module | Critical | Serious | Moderate | Minor | Total |',
-    '|---|---|---|---|---|---|',
+    '| Module | Score | Grade | Critical | Serious | Moderate | Minor | Total |',
+    '|---|---|---|---|---|---|---|---|',
   ];
   for (const prefix of PREFIX_ORDER) {
     const mi = issues.filter((i) => i.prefix === prefix);
-    if (mi.length === 0) continue;
+    if (mi.length === 0 && !moduleScores[prefix]) continue;
     const c = (impact: ImpactLevel) => mi.filter((i) => i.impact === impact).length;
-    rows.push(`| ${MODULE_LABELS[prefix]} | ${c('critical')} | ${c('serious')} | ${c('moderate')} | ${c('minor')} | ${mi.length} |`);
+    const ms = moduleScores[prefix];
+    rows.push(`| ${MODULE_LABELS[prefix]} | ${ms ? ms.score + '%' : '—'} | ${ms ? ms.grade : '—'} | ${c('critical')} | ${c('serious')} | ${c('moderate')} | ${c('minor')} | ${mi.length} |`);
   }
   const t = (impact: ImpactLevel) => issues.filter((i) => i.impact === impact).length;
-  rows.push(`| **Total** | **${t('critical')}** | **${t('serious')}** | **${t('moderate')}** | **${t('minor')}** | **${issues.length}** |`);
+  rows.push(`| **Total** | **${overallScore.score}%** | **${overallScore.grade}** | **${t('critical')}** | **${t('serious')}** | **${t('moderate')}** | **${t('minor')}** | **${issues.length}** |`);
   return rows.join('\n') + '\n';
 }
 
@@ -145,11 +147,19 @@ function buildJson(result: AuditResult, issues: Issue[]): string {
     date: result.runDate.slice(0, 10),
     toolVersion,
     pagesAudited: result.pagesAudited,
+    overall: result.overallScore,
     modules: Object.fromEntries(
-      PREFIX_ORDER.map((prefix) => [
-        MODULE_LABELS[prefix].toLowerCase().replace(' ', '_'),
-        { issues: issues.filter((i) => i.prefix === prefix) },
-      ])
+      PREFIX_ORDER.map((prefix) => {
+        const ms = result.moduleScores[prefix];
+        return [
+          MODULE_LABELS[prefix].toLowerCase().replace(' ', '_'),
+          {
+            score: ms?.score ?? null,
+            grade: ms?.grade ?? null,
+            issues: issues.filter((i) => i.prefix === prefix),
+          },
+        ];
+      })
     ),
   };
   return JSON.stringify(output, null, 2);
@@ -161,7 +171,7 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
   const { version, level } = result.config.wcag;
   const toolVersion = require('../package.json').version as string;
 
-  const scorecardHtml = htmlScorecard(issues);
+  const scorecardHtml = htmlScorecard(result);
   const sectionsHtml = PREFIX_ORDER.map((prefix) => {
     const moduleIssues = issues.filter((i) => i.prefix === prefix);
     if (moduleIssues.length === 0) return '';
@@ -228,13 +238,21 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
 </html>`;
 }
 
-function htmlScorecard(issues: Issue[]): string {
+function gradeColor(grade: string): string {
+  return grade === 'A' ? '#27ae60' : grade === 'B' ? '#2980b9' : grade === 'C' ? '#f39c12' : '#c0392b';
+}
+
+function htmlScorecard(result: AuditResult): string {
+  const { issues, moduleScores, overallScore } = result;
   const rows = PREFIX_ORDER.map((prefix) => {
     const mi = issues.filter((i) => i.prefix === prefix);
-    if (mi.length === 0) return '';
+    const ms = moduleScores[prefix];
+    if (mi.length === 0 && !ms) return '';
     const c = (impact: ImpactLevel) => mi.filter((i) => i.impact === impact).length;
     return `<tr>
       <td>${MODULE_LABELS[prefix]}</td>
+      <td style="font-weight:600">${ms ? ms.score + '%' : '—'}</td>
+      <td><span class="badge" style="background:${ms ? gradeColor(ms.grade) + '22' : '#eee'};color:${ms ? gradeColor(ms.grade) : '#999'}">${ms ? ms.grade : '—'}</span></td>
       <td style="color:${IMPACT_COLORS.critical};font-weight:600">${c('critical') || '—'}</td>
       <td style="color:${IMPACT_COLORS.serious};font-weight:600">${c('serious') || '—'}</td>
       <td style="color:${IMPACT_COLORS.moderate};font-weight:600">${c('moderate') || '—'}</td>
@@ -245,7 +263,9 @@ function htmlScorecard(issues: Issue[]): string {
 
   const t = (impact: ImpactLevel) => issues.filter((i) => i.impact === impact).length;
   rows.push(`<tr class="total">
-    <td>Total</td>
+    <td>Overall</td>
+    <td style="font-weight:700">${overallScore.score}%</td>
+    <td><span class="badge" style="background:${gradeColor(overallScore.grade)}22;color:${gradeColor(overallScore.grade)}">${overallScore.grade}</span></td>
     <td style="color:${IMPACT_COLORS.critical}">${t('critical') || '—'}</td>
     <td style="color:${IMPACT_COLORS.serious}">${t('serious') || '—'}</td>
     <td style="color:${IMPACT_COLORS.moderate}">${t('moderate') || '—'}</td>
@@ -254,7 +274,7 @@ function htmlScorecard(issues: Issue[]): string {
   </tr>`);
 
   return `<table>
-    <thead><tr><th>Module</th><th>Critical</th><th>Serious</th><th>Moderate</th><th>Minor</th><th>Total</th></tr></thead>
+    <thead><tr><th>Module</th><th>Score</th><th>Grade</th><th>Critical</th><th>Serious</th><th>Moderate</th><th>Minor</th><th>Total</th></tr></thead>
     <tbody>${rows.join('\n')}</tbody>
   </table>`;
 }

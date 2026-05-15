@@ -1,4 +1,4 @@
-import { Config, Issue, ImpactLevel } from '../types';
+import { Config, Issue, ImpactLevel, AuditModuleResult } from '../types';
 
 interface HeaderCheck {
   header: string;
@@ -56,7 +56,7 @@ export async function runSecurityHeadersAudit(
   headers: Record<string, string>,
   pageUrl: string,
   _config: Config
-): Promise<Issue[]> {
+): Promise<AuditModuleResult> {
   const issues: Issue[] = [];
 
   for (const check of HEADER_CHECKS) {
@@ -74,5 +74,5 @@ export async function runSecurityHeadersAudit(
     }
   }
 
-  return issues;
+  return { issues, totalChecks: HEADER_CHECKS.length };
 }

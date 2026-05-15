@@ -1,5 +1,5 @@
 import { Page } from 'playwright';
-import { Config, Issue } from '../types';
+import { Config, Issue, AuditModuleResult } from '../types';
 
 const CONSENT_SELECTORS = [
   '[id*="cookie"]', '[class*="cookie"]',
@@ -8,7 +8,7 @@ const CONSENT_SELECTORS = [
   '[id*="banner"]', '[class*="banner"]',
 ];
 
-export async function runPrivacyAudit(page: Page, _config: Config): Promise<Issue[]> {
+export async function runPrivacyAudit(page: Page, _config: Config): Promise<AuditModuleResult> {
   const issues: Issue[] = [];
   const pageUrl = page.url();
   const origin = new URL(pageUrl).origin;
@@ -88,5 +88,5 @@ export async function runPrivacyAudit(page: Page, _config: Config): Promise<Issu
     // network error — skip silently
   }
 
-  return issues;
+  return { issues, totalChecks: 4 };
 }

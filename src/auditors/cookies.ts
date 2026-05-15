@@ -1,7 +1,7 @@
 import { Page } from 'playwright';
-import { Config, Issue } from '../types';
+import { Config, Issue, AuditModuleResult } from '../types';
 
-export async function runCookieAudit(page: Page, _config: Config): Promise<Issue[]> {
+export async function runCookieAudit(page: Page, _config: Config): Promise<AuditModuleResult> {
   const issues: Issue[] = [];
   const pageUrl = page.url();
   const pageHost = new URL(pageUrl).hostname;
@@ -52,5 +52,6 @@ export async function runCookieAudit(page: Page, _config: Config): Promise<Issue
     }
   }
 
-  return issues;
+  // 3 checks per cookie (secure, httpOnly, third-party); if no cookies, score is 100
+  return { issues, totalChecks: cookies.length * 3 };
 }

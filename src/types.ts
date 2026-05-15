@@ -51,9 +51,22 @@ export interface Config {
   urls: string[];
 }
 
+export interface AuditModuleResult {
+  issues: Issue[];
+  totalChecks: number;
+  scoringIssueCount?: number; // override issues.length for scoring (used by ACC: rule-level, not node-level)
+}
+
+export interface ModuleScore {
+  score: number;
+  grade: string;
+}
+
 export interface AuditResult {
   config: Config;
   runDate: string;
   pagesAudited: string[];
   issues: Issue[];
+  moduleScores: Partial<Record<IssuePrefix, ModuleScore>>;
+  overallScore: ModuleScore;
 }

@@ -1,5 +1,5 @@
 import { chromium } from 'playwright';
-import { Config, AuditResult, Issue, IssuePrefix } from './types';
+import { Config, AuditResult, Issue, IssuePrefix, AuditModuleResult, ModuleScore } from './types';
 import { resolveUrls } from './crawler';
 import { runAccessibilityAudit } from './auditors/accessibility';
 import { runPrivacyAudit } from './auditors/privacy';
@@ -22,6 +22,8 @@ export async function runAudit(config: Config): Promise<AuditResult> {
   }
 
   const rawIssues: Issue[] = [];
+  const moduleChecks: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, LNK: 0 };
+  const moduleScoringIssueCounts: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, LNK: 0 };
 
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
@@ -38,18 +40,20 @@ export async function runAudit(config: Config): Promise<AuditResult> {
       continue;
     }
 
-    const auditors: Array<() => Promise<Issue[]>> = [];
+    const auditors: Array<{ prefix: IssuePrefix; fn: () => Promise<AuditModuleResult> }> = [];
 
-    if (config.modules.accessibility) auditors.push(() => runAccessibilityAudit(page, config));
-    if (config.modules.privacy) auditors.push(() => runPrivacyAudit(page, config));
-    if (config.modules.cookies) auditors.push(() => runCookieAudit(page, config));
-    if (config.modules.securityHeaders) auditors.push(() => runSecurityHeadersAudit(responseHeaders, url, config));
-    if (config.modules.brokenLinks) auditors.push(() => runBrokenLinksAudit(page, config));
+    if (config.modules.accessibility) auditors.push({ prefix: 'ACC', fn: () => runAccessibilityAudit(page, config) });
+    if (config.modules.privacy) auditors.push({ prefix: 'PRI', fn: () => runPrivacyAudit(page, config) });
+    if (config.modules.cookies) auditors.push({ prefix: 'COO', fn: () => runCookieAudit(page, config) });
+    if (config.modules.securityHeaders) auditors.push({ prefix: 'SEC', fn: () => runSecurityHeadersAudit(responseHeaders, url, config) });
+    if (config.modules.brokenLinks) auditors.push({ prefix: 'LNK', fn: () => runBrokenLinksAudit(page, config) });
 
-    for (const auditor of auditors) {
+    for (const { prefix, fn } of auditors) {
       try {
-        const issues = await auditor();
-        rawIssues.push(...issues);
+        const result: AuditModuleResult = await fn();
+        rawIssues.push(...result.issues);
+        moduleChecks[prefix] += result.totalChecks;
+        moduleScoringIssueCounts[prefix] += result.scoringIssueCount ?? result.issues.length;
       } catch (err) {
         console.warn(`[runner] Auditor error on ${url}: ${err instanceof Error ? err.message : err}`);
       }
@@ -62,16 +66,24 @@ export async function runAudit(config: Config): Promise<AuditResult> {
   const sorted = sortIssues(suppressed);
   const issues = assignIds(sorted);
 
+  const moduleScores = computeModuleScores(moduleChecks, moduleScoringIssueCounts, config);
+  const overallScore = computeOverallScore(moduleScores);
+
   return {
     config,
     runDate: new Date().toISOString(),
     pagesAudited: urls,
     issues,
+    moduleScores,
+    overallScore,
   };
 }
 
 
 const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'LNK'];
+const PREFIX_TO_MODULE: Record<IssuePrefix, keyof Config['modules']> = {
+  ACC: 'accessibility', PRI: 'privacy', COO: 'cookies', SEC: 'securityHeaders', LNK: 'brokenLinks',
+};
 const IMPACT_ORDER = ['critical', 'serious', 'moderate', 'minor'];
 
 function sortIssues(issues: Issue[]): Issue[] {
@@ -97,6 +109,36 @@ function applySuppress(issues: Issue[], config: Config): Issue[] {
 function matchGlob(pattern: string, url: string): boolean {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
   return new RegExp(`^${escaped}$`).test(url);
+}
+
+function computeModuleScores(
+  moduleChecks: Record<IssuePrefix, number>,
+  moduleScoringIssueCounts: Record<IssuePrefix, number>,
+  config: Config,
+): Partial<Record<IssuePrefix, ModuleScore>> {
+  const scores: Partial<Record<IssuePrefix, ModuleScore>> = {};
+  for (const prefix of PREFIX_ORDER) {
+    if (!config.modules[PREFIX_TO_MODULE[prefix]]) continue;
+    const total = moduleChecks[prefix];
+    const failed = moduleScoringIssueCounts[prefix];
+    const score = total === 0 ? 100 : Math.max(0, Math.round(((total - failed) / total) * 100));
+    scores[prefix] = { score, grade: scoreGrade(score) };
+  }
+  return scores;
+}
+
+function computeOverallScore(moduleScores: Partial<Record<IssuePrefix, ModuleScore>>): ModuleScore {
+  const values = Object.values(moduleScores).map((s) => s!.score);
+  if (values.length === 0) return { score: 100, grade: 'A' };
+  const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+  return { score: avg, grade: scoreGrade(avg) };
+}
+
+function scoreGrade(score: number): string {
+  if (score >= 90) return 'A';
+  if (score >= 75) return 'B';
+  if (score >= 60) return 'C';
+  return 'D';
 }
 
 function assignIds(issues: Issue[]): Issue[] {

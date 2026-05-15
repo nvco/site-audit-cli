@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-05-15 (Phase 9)
+
+### Added
+- Module-level scoring — each enabled module gets a score (0–100%) and letter grade (A/B/C/D) based on passing checks vs total checks
+- Overall score — average across all enabled modules, shown in console output and all report formats
+- Exit codes — `0` for clean pass, `1` if any issues found, `2` for tool errors; enables CI/CD pipeline integration
+- `AuditModuleResult` type — all auditors now return `{ issues, totalChecks, scoringIssueCount? }` instead of `Issue[]`
+- `ModuleScore` type — `{ score, grade }` added to `AuditResult`
+- Score + grade columns in markdown and HTML scorecards
+- `overall` block in JSON output: `{ score, grade }`
+- Root config profiles — `sdet.json` (security/links/cookies), `compliance.json` (accessibility/privacy/cookies), `full.json` (all modules)
+- `README.md` — quick start, profile table, module list, output formats, scoring, exit codes, GitHub Actions example, config reference
+
+### Changed
+- All 5 auditors updated to return `AuditModuleResult` — each tracks its own `totalChecks` (ACC: axe passes+violations; PRI: 4; COO: cookies×3; SEC: 5; LNK: links checked)
+- `runner.ts` — accumulates `totalChecks` and `scoringIssueCounts` per module, computes scores before returning `AuditResult`
+- `reporter.ts` — scorecard updated in all three formats (MD/HTML/JSON) to show score and grade per module
+- `index.ts` — console output now shows overall score/grade; exits with code 1 when issues are found
+
 ## 2026-05-14 (Phase 8)
 
 ### Added

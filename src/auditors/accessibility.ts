@@ -1,5 +1,5 @@
 import { Page } from 'playwright';
-import { Config, Issue } from '../types';
+import { Config, Issue, AuditModuleResult } from '../types';
 import * as path from 'path';
 
 type AxeImpact = 'critical' | 'serious' | 'moderate' | 'minor';
@@ -90,7 +90,7 @@ function wcagTags(version: string, level: string): string[] {
   return tags;
 }
 
-export async function runAccessibilityAudit(page: Page, config: Config): Promise<Issue[]> {
+export async function runAccessibilityAudit(page: Page, config: Config): Promise<AuditModuleResult> {
   const axePath = path.join(
     path.dirname(require.resolve('axe-core')),
     'axe.min.js'
@@ -99,12 +99,12 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
 
   const tags = wcagTags(config.wcag.version, config.wcag.level);
 
-  const violations: AxeViolation[] = await page.evaluate((runTags) => {
-    return new Promise((resolve) => {
+  const { violations, passesCount } = await page.evaluate((runTags) => {
+    return new Promise<{ violations: AxeViolation[], passesCount: number }>((resolve) => {
       (globalThis as unknown as { axe: { run: Function } }).axe.run(
         { runOnly: { type: 'tag', values: runTags } },
-        (_err: unknown, results: { violations: AxeViolation[] }) => {
-          resolve(results.violations);
+        (_err: unknown, results: { violations: AxeViolation[], passes: unknown[] }) => {
+          resolve({ violations: results.violations, passesCount: results.passes.length });
         }
       );
     });
@@ -127,5 +127,9 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
     }
   }
 
-  return issues;
+  return {
+    issues,
+    totalChecks: passesCount + violations.length,
+    scoringIssueCount: violations.length,
+  };
 }

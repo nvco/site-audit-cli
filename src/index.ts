@@ -17,8 +17,12 @@ async function main() {
   const { generateReports } = await import('./reporter');
   const { runDir } = await generateReports(result, 'reports');
 
+  const { score, grade } = result.overallScore;
   console.log(`\nAudit complete — ${result.pagesAudited.length} page(s) audited, ${result.issues.length} issue(s) found`);
+  console.log(`  Score:    ${score}% (${grade})`);
   console.log(`  Output:   ${runDir}/`);
+
+  if (result.issues.length > 0) process.exit(1);
 }
 
 main().catch((err) => {
