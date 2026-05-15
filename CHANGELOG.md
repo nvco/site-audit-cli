@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-15
+
+### Added
+- `config/` folder — three profiles (`sdet.json`, `compliance.json`, `full.json`) consolidated here; replaces scattered root-level files and `config-examples/`
+
+### Changed
+- Default config path changed from `config.json` to `config/full.json` — running with no argument now runs a full audit automatically
+- `src/config.ts` — updated default path and error message to reference `config/` profiles
+- `config.example.json` and root-level `sdet.json`, `compliance.json`, `full.json` removed
+- `config-examples/` folder and all five single-module reference configs removed
+- `CLAUDE.md` — fully rewritten to reflect current architecture (phases 1–12, six audit modules, all new features)
+- `PLAN.md` — CLI commands, Config Profiles section, and file structure updated for `config/` layout
+- `README.md` — quick start, profile table, and GitHub Actions example updated for `config/` paths
+- `.gitignore` — removed `config.json` entry (no longer a special file)
+
 ## 2026-05-15 (Phase 12)
 
 ### Added

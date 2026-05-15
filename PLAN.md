@@ -25,20 +25,21 @@ A CLI web audit tool built in TypeScript using Playwright that audits websites a
 npm install
 npx playwright install chromium
 
-node dist/index.js                      # uses config.json by default
-node dist/index.js sdet.json            # point at a named config profile
-node dist/index.js compliance.json
+node dist/index.js                          # defaults to config/full.json
+node dist/index.js config/sdet.json
+node dist/index.js config/compliance.json
+node dist/index.js config/full.json
 ```
 
 **Docker:**
 ```bash
-docker compose up                       # uses config.json by default
+docker compose up                           # defaults to config/full.json
 
-docker compose run site-audit-cli sdet.json
-docker compose run site-audit-cli compliance.json
+docker compose run site-audit-cli config/sdet.json
+docker compose run site-audit-cli config/compliance.json
 ```
 
-There are no CLI flags or arguments. Everything is configured in the config file. The only optional argument is a path to a config file — if omitted, defaults to `config.json` in the current directory. All configured output formats are generated automatically at the end of every run.
+There are no CLI flags or arguments. Everything is configured in the config file. The only optional argument is a path to a config file — if omitted, defaults to `config/full.json`. All configured output formats are generated automatically at the end of every run.
 
 ---
 
@@ -46,23 +47,21 @@ There are no CLI flags or arguments. Everything is configured in the config file
 
 Two tiers of config files serve different purposes:
 
-**Root profiles** — ready-to-use entry points, pick one and edit it:
+**`config/` profiles** — ready-to-use entry points, pick one and edit it:
 
 | File | Audience | Modules |
 |---|---|---|
-| `sdet.json` | CI/CD pipelines, regression catching | security-headers, broken-links, cookies, SSL/TLS |
-| `compliance.json` | GDPR/WCAG audits, client-facing reports | accessibility, privacy, cookies |
-| `full.json` | Comprehensive site health | all modules + scoring |
+| `config/sdet.json` | CI/CD pipelines, regression catching | security-headers, broken-links, cookies, SSL/TLS |
+| `config/compliance.json` | GDPR/WCAG audits, client-facing reports | accessibility, privacy, cookies, SSL/TLS |
+| `config/full.json` | Comprehensive site health | all modules + scoring |
 
-> These files need to be created in the root folder (tracked in Phase 9 CI/CD work).
-
-**`config-examples/`** — single-module reference configs for development and targeted testing. Not meant as entry points — use them to understand how to configure individual modules in isolation.
+Running without an argument defaults to `config/full.json`.
 
 ---
 
-## Configuration — `config.json`
+## Configuration
 
-All settings live in a single `config.json` in the project root. Below is the full structure with comments explaining each field.
+All settings live in a config file passed as the CLI argument. Below is the full structure with comments explaining each field.
 
 ```jsonc
 {
@@ -226,7 +225,7 @@ site-audit-cli/
 │       └── broken-links.ts   # Link extraction and status checking
 ├── reports/                  # All generated output (gitignored)
 ├── archive/                  # Completed TODO files
-├── config.json               # User configuration (gitignored, config.example.json provided)
+├── config/                   # Config profiles (sdet.json, compliance.json, full.json)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── PLAN.md                   # This file
@@ -267,7 +266,7 @@ Requires Node.js 20+ and npm. After `npm install` and `npx playwright install ch
 The Docker image bundles Node.js, all npm dependencies, and Playwright's Chromium — no local setup required beyond Docker itself. Preferred for CI/CD pipelines and sharing with teams.
 
 `docker-compose.yml` pre-configures two volume mounts:
-- `./config.json` → `/app/config.json` (read by the tool)
+- `./config/` → `/app/config/` (profiles read by the tool)
 - `./reports` → `/app/reports` (output written here, persists after container exits)
 
 ---
@@ -400,7 +399,7 @@ jobs:
           path: audit.json
 ```
 
-**Root config profiles** — `sdet.json`, `compliance.json`, `full.json` created in root folder (see Config Profiles section).
+**Config profiles** — `config/sdet.json`, `config/compliance.json`, `config/full.json` (see Config Profiles section).
 
 **README** — initial version written alongside Phase 8. Sections: one-line description, three entry points with commands, feature table, quick start, GitHub Actions example, config reference, link to `docs/index.html` as live demo. Will be refined in later phases as features are added.
 

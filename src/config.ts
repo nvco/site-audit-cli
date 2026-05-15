@@ -2,11 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Config } from './types';
 
-export function loadConfig(configPath = 'config.json'): Config {
+export function loadConfig(configPath = 'config/full.json'): Config {
   const fullPath = path.resolve(configPath);
 
   if (!fs.existsSync(fullPath)) {
-    throw new Error(`Config file not found: ${fullPath}\nCopy config.example.json to config.json and fill in your settings.`);
+    throw new Error(`Config file not found: ${fullPath}\nUsage: node dist/index.js <config-file>\nExample: node dist/index.js config/sdet.json`);
   }
 
   let raw: unknown;

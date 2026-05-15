@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Project Is
 
-A CLI web audit tool built in TypeScript using Playwright. It audits websites across five areas (accessibility, privacy, cookies, security headers, broken links) and produces two markdown reports per run. Runs inside Docker — the only local requirement is Docker.
+A CLI web audit tool built in TypeScript using Playwright. It audits websites across six areas (accessibility, privacy, cookies, security headers, SSL/TLS, broken links) and produces markdown, HTML, PDF, and JSON reports per run. Supports local (Node.js) and Docker run modes.
 
 Read `PLAN.md` for the full design spec before making any significant changes.
 
@@ -15,11 +15,14 @@ https://github.com/nvco/site-audit-cli
 ## Commands
 
 ```bash
-# Run the audit
-docker compose up
+# Local
+npm install && npx playwright install chromium
+node dist/index.js                      # full audit (defaults to config/full.json)
+node dist/index.js config/sdet.json
+node dist/index.js config/compliance.json
 
-# Generate PDFs from an existing report (separate step, after reviewing markdown)
-docker compose run site-audit-cli pdf reports/example-com-2026-04-30
+# Docker (Phase 13 — not yet implemented)
+docker compose up
 ```
 
 There is no test runner command — Playwright is used as a library, not via `playwright test`.
@@ -30,48 +33,58 @@ There is no test runner command — Playwright is used as a library, not via `pl
 
 ## Key Architecture Decisions
 
-**Playwright is used as a browser automation library only.** We do not use the Playwright test runner, reporters, or any of its built-in test infrastructure. It fires up Chromium headlessly and we drive it programmatically.
+**Playwright is used as a browser automation library only.** We do not use the Playwright test runner, reporters, or any of its built-in test infrastructure.
 
-**All configuration lives in `config.json`.** No CLI flags except the `pdf` subcommand. URLs to audit are the last field in the config.
+**Config profiles live in `config/`.** Three profiles: `sdet.json`, `compliance.json`, `full.json`. No CLI flags — only an optional path argument. Defaults to `config/full.json` if omitted.
 
 **Mode is inferred from the `urls` array:**
 - One URL → crawl mode: follows links up to `crawl.depth` and `crawl.maxPages`
 - Multiple URLs → list mode: audits exactly those pages, crawl settings ignored
 
-**Issue IDs are globally unique per run**, not per page. Each module has its own prefix (`ACC`, `PRI`, `COO`, `SEC`, `LNK`) and a single sequential counter across all pages.
+**Issue IDs are globally unique per run.** Each module has its own prefix (`ACC`, `PRI`, `COO`, `SEC`, `SSL`, `LNK`) and a sequential counter across all pages.
 
-**Two output files per run** — `[name]-report.md` (scannable, sorted by severity) and `[name]-remediation.md` (full fix detail keyed to the same IDs). PDFs are generated on demand via the `pdf` command, never automatically.
+**Four output formats per run** — markdown, HTML, PDF, JSON — written to `reports/YYYYMMDD-HHmmss/`. All enabled by default; disable individually via `output.formats` in config.
 
 **Suppress list** matches by `rule` + `url` pattern (not by issue ID, since IDs change between runs).
+
+**Exit codes:** 0 = no issues, 1 = issues found, 2 = tool error.
+
+**Scoring:** each module scores 0–100% based on passing checks / total checks. Letter grade A/B/C/D.
+
+**Regression detection:** `.last-run.json` saved after every run. Set `compareLastRun: true` in config to diff against it and flag new violations.
 
 ## Project Structure
 
 ```
 src/
-├── index.ts              # Entry point, parses command, orchestrates run
-├── config.ts             # Loads and validates config.json
+├── index.ts              # Entry point, orchestrates run, handles regression diff
+├── config.ts             # Loads and validates config file
 ├── crawler.ts            # URL discovery, depth/maxPages, mode inference
-├── runner.ts             # Orchestrates auditors, applies suppress list, assigns IDs
-├── reporter.ts           # Writes report.md and remediation.md
-├── pdf.ts                # PDF subcommand — reads existing markdown, writes PDFs
-├── types.ts              # Shared Issue type and enums used across all modules
+├── runner.ts             # Orchestrates auditors, suppress list, ID assignment, scoring
+├── reporter.ts           # Generates all four output formats
+├── regression.ts         # .last-run.json save/load/diff
+├── types.ts              # Shared types (Issue, Config, AuditResult, etc.)
 └── auditors/
-    ├── accessibility.ts  # axe-core via Playwright
+    ├── accessibility.ts  # axe-core via Playwright; EN 301 549 mode support
     ├── privacy.ts        # Consent banner, privacy policy, CCPA link, GPC check
-    ├── cookies.ts        # Cookie capture and analysis
-    ├── security-headers.ts
+    ├── cookies.ts        # Secure, HttpOnly, SameSite, third-party, expiry checks
+    ├── security-headers.ts  # CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, mixed content
+    ├── ssl.ts            # Cert expiry, TLS version, HTTPS redirect (Node tls/http, not Playwright)
     └── broken-links.ts
+config/                   # Config profiles (sdet.json, compliance.json, full.json)
 reports/                  # Generated output (gitignored)
 archive/                  # Completed TODO files
 ```
 
 ## Auditor Contract
 
-Every auditor receives a Playwright `Page` and the loaded config, and returns `Issue[]`. The runner collects all issues across all auditors and pages, applies suppression, assigns IDs, then passes to the reporter.
+Every auditor returns `AuditModuleResult { issues: Issue[], totalChecks: number, scoringIssueCount?: number }`. The runner accumulates totalChecks per module, computes scores, applies suppression, assigns IDs.
 
 ```typescript
+type IssuePrefix = 'ACC' | 'PRI' | 'COO' | 'SEC' | 'SSL' | 'LNK';
+
 interface Issue {
-  prefix: 'ACC' | 'PRI' | 'COO' | 'SEC' | 'LNK';
+  prefix: IssuePrefix;
   impact: 'critical' | 'serious' | 'moderate' | 'minor';
   description: string;
   location: string;
@@ -79,19 +92,7 @@ interface Issue {
   remediation: string;
   rule: string;
   pageUrl: string;
+  isInformational?: boolean;  // EN 301 549 mode: best-practice violations
+  isNew?: boolean;            // regression detection: not in .last-run.json
 }
 ```
-
-## Implementation Phases
-
-Work through phases in order. Each phase has its own TODO file; completed ones move to `archive/`.
-
-| # | Phase | TODO file |
-|---|---|---|
-| 1 | Project setup — TypeScript, Playwright, Docker scaffold, config loader | `todo-01-project-setup.md` |
-| 2 | Crawler | `todo-02-crawler.md` |
-| 3 | All five auditors | `todo-03-auditors.md` |
-| 4 | Runner — orchestration, suppress list, ID assignment | `todo-04-runner.md` |
-| 5 | Reporter — markdown generation | `todo-05-reporter.md` |
-| 6 | PDF command | `todo-06-pdf.md` |
-| 7 | Polish — error handling, README, config.example.json, Docker testing | `todo-07-polish.md` |

@@ -15,7 +15,10 @@ npm install
 npx playwright install chromium
 
 # Edit a config profile to point at your site, then run:
-node dist/index.js full.json
+node dist/index.js config/full.json
+
+# Or just run with no argument — defaults to config/full.json
+node dist/index.js
 ```
 
 Reports are written to `reports/YYYYMMDD-HHmmss/`.
@@ -24,21 +27,20 @@ Reports are written to `reports/YYYYMMDD-HHmmss/`.
 
 ## Config profiles
 
-Three ready-to-use profiles live in the project root. Edit the `urls` field and run.
+Three ready-to-use profiles live in the `config/` folder. Edit the `urls` field and run.
 
 | Profile | Audience | Modules |
 |---|---|---|
-| `sdet.json` | CI/CD pipelines, regression testing | Security headers, broken links, cookies |
-| `compliance.json` | GDPR/WCAG audits, client-facing reports | Accessibility, privacy, cookies |
-| `full.json` | Complete site health check | All modules |
+| `config/sdet.json` | CI/CD pipelines, regression testing | Security headers, broken links, cookies, SSL/TLS |
+| `config/compliance.json` | GDPR/WCAG audits, client-facing reports | Accessibility, privacy, cookies, SSL/TLS |
+| `config/full.json` | Complete site health check | All modules |
 
 ```bash
-node dist/index.js sdet.json
-node dist/index.js compliance.json
-node dist/index.js full.json
+node dist/index.js                        # full audit (default)
+node dist/index.js config/sdet.json
+node dist/index.js config/compliance.json
+node dist/index.js config/full.json
 ```
-
-For single-module reference configs, see `config-examples/`.
 
 ---
 
@@ -106,7 +108,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci && npx playwright install chromium
-      - run: node dist/index.js sdet.json
+      - run: node dist/index.js config/sdet.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

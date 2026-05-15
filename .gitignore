@@ -10,9 +10,6 @@ reports/
 # Regression baseline
 .last-run.json
 
-# Local config (copy from config-examples/)
-config.json
-
 # macOS
 .DS_Store
 .AppleDouble
