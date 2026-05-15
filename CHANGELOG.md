@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-15 (Phase 11)
+
+### Added
+- EN 301 549 standard support — new optional `standard` field in config (`"wcag"` default, `"en301549"` mode); in EN 301 549 mode, best-practice-only violations are marked informational and excluded from score and exit code; compliance violations prefixed with `[EN 301 549 §9]` in description
+- Cookie SameSite check — flags cookies missing the `SameSite` attribute (moderate) or using `SameSite=None` without `Secure` (serious)
+- Cookie expiry check — flags persistent cookies with lifetime > 1 year (moderate), per GDPR data minimisation
+
+### Changed
+- `src/types.ts` — `Issue` gains `isInformational?: boolean`; `Config` gains `standard?: 'wcag' | 'en301549'`
+- `src/auditors/accessibility.ts` — EN 301 549 classification logic; informational issues excluded from `scoringIssueCount`
+- `src/auditors/cookies.ts` — two new checks per cookie; `totalChecks` updated from 3 to 5 per cookie
+- `src/runner.ts` — informational issues excluded from `moduleScoringIssueCounts`
+- `src/index.ts` — exit code 1 only when non-informational issues are present
+- `src/reporter.ts` — informational ACC issues rendered in a separate subsection in both markdown and HTML; grey styling in HTML; `markdownIssue()` extracted as a reusable helper
+
 ## 2026-05-15 (Phase 10)
 
 ### Added

@@ -62,7 +62,8 @@ export async function runAudit(config: Config): Promise<AuditResult> {
         const result: AuditModuleResult = await fn();
         rawIssues.push(...result.issues);
         moduleChecks[prefix] += result.totalChecks;
-        moduleScoringIssueCounts[prefix] += result.scoringIssueCount ?? result.issues.length;
+        const effectiveIssues = result.issues.filter((i) => !i.isInformational);
+        moduleScoringIssueCounts[prefix] += result.scoringIssueCount ?? effectiveIssues.length;
       } catch (err) {
         console.warn(`[runner] Auditor error on ${url}: ${err instanceof Error ? err.message : err}`);
       }

@@ -22,7 +22,8 @@ async function main() {
   console.log(`  Score:    ${score}% (${grade})`);
   console.log(`  Output:   ${runDir}/`);
 
-  if (result.issues.length > 0) process.exit(1);
+  const blockingIssues = result.issues.filter((i) => !i.isInformational);
+  if (blockingIssues.length > 0) process.exit(1);
 }
 
 main().catch((err) => {

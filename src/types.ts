@@ -11,6 +11,7 @@ export interface Issue {
   remediation: string;
   rule: string;
   pageUrl: string;
+  isInformational?: boolean;
 }
 
 export interface SuppressRule {
@@ -30,6 +31,7 @@ export interface Config {
     version: '2.0' | '2.1' | '2.2';
     level: 'A' | 'AA' | 'AAA';
   };
+  standard?: 'wcag' | 'en301549';
   modules: {
     accessibility: boolean;
     privacy: boolean;

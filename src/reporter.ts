@@ -101,23 +101,37 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
     const moduleIssues = issues.filter((i) => i.prefix === prefix);
     if (moduleIssues.length === 0) continue;
     lines.push(`## ${MODULE_LABELS[prefix]}\n`);
-    for (const issue of moduleIssues) {
-      lines.push(`### ${issue.id}\n`);
-      lines.push(`- **Impact:** ${issue.impact}`);
-      lines.push(`- **Issue:** ${issue.description}`);
-      if (issue.prefix === 'ACC') {
-        lines.push(`- **Element:** \`${shortLocation(issue.location)}\``);
-        lines.push(`- **Full path:** \`${issue.location}\``);
-      } else {
-        lines.push(`- **Location:** \`${issue.location}\``);
+    const compliance = moduleIssues.filter((i) => !i.isInformational);
+    const informational = moduleIssues.filter((i) => i.isInformational);
+    for (const issue of compliance) {
+      lines.push(markdownIssue(issue));
+    }
+    if (informational.length > 0) {
+      lines.push(`### Informational (does not affect score or exit code)\n`);
+      for (const issue of informational) {
+        lines.push(markdownIssue(issue));
       }
-      lines.push(`- **URL:** ${issue.pageUrl}`);
-      lines.push(`- **Reference:** ${issue.docLink}`);
-      lines.push(`- **Fix:** ${issue.remediation}`);
-      lines.push('');
     }
   }
 
+  return lines.join('\n');
+}
+
+function markdownIssue(issue: Issue): string {
+  const lines: string[] = [];
+  lines.push(`### ${issue.id}\n`);
+  lines.push(`- **Impact:** ${issue.impact}`);
+  lines.push(`- **Issue:** ${issue.description}`);
+  if (issue.prefix === 'ACC') {
+    lines.push(`- **Element:** \`${shortLocation(issue.location)}\``);
+    lines.push(`- **Full path:** \`${issue.location}\``);
+  } else {
+    lines.push(`- **Location:** \`${issue.location}\``);
+  }
+  lines.push(`- **URL:** ${issue.pageUrl}`);
+  lines.push(`- **Reference:** ${issue.docLink}`);
+  lines.push(`- **Fix:** ${issue.remediation}`);
+  lines.push('');
   return lines.join('\n');
 }
 
@@ -176,10 +190,17 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
   const sectionsHtml = PREFIX_ORDER.map((prefix) => {
     const moduleIssues = issues.filter((i) => i.prefix === prefix);
     if (moduleIssues.length === 0) return '';
+    const compliance = moduleIssues.filter((i) => !i.isInformational);
+    const informational = moduleIssues.filter((i) => i.isInformational);
+    const informationalHtml = informational.length > 0
+      ? `<h3 style="font-size:13px;color:#666;font-weight:600;margin:20px 0 8px;text-transform:uppercase;letter-spacing:0.05em">Informational — does not affect score or exit code</h3>
+      ${informational.map((issue) => htmlIssue(issue, true)).join('\n')}`
+      : '';
     return `
     <section>
       <h2>${MODULE_LABELS[prefix]}</h2>
-      ${moduleIssues.map((issue) => htmlIssue(issue)).join('\n')}
+      ${compliance.map((issue) => htmlIssue(issue, false)).join('\n')}
+      ${informationalHtml}
     </section>`;
   }).join('\n');
 
@@ -280,9 +301,9 @@ function htmlScorecard(result: AuditResult): string {
   </table>`;
 }
 
-function htmlIssue(issue: Issue): string {
-  const color = IMPACT_COLORS[issue.impact];
-  const bg = IMPACT_BG[issue.impact];
+function htmlIssue(issue: Issue, informational = false): string {
+  const color = informational ? '#999' : IMPACT_COLORS[issue.impact];
+  const bg = informational ? '#f9f9f9' : IMPACT_BG[issue.impact];
   const locationLabel = issue.prefix === 'ACC' ? 'Element' : 'Location';
   const locationValue = issue.prefix === 'ACC'
     ? `<code>${shortLocation(issue.location)}</code> <span style="color:#999;font-size:12px">${issue.location}</span>`

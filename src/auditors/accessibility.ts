@@ -110,19 +110,29 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
     });
   }, tags);
 
+  const isEn301549 = config.standard === 'en301549';
   const issues: Issue[] = [];
+  let complianceViolationCount = 0;
 
   for (const v of violations) {
+    const hasWcagTag = v.tags.some((t) => /^wcag\d+[a]+/.test(t));
+    const isInformational = isEn301549 && !hasWcagTag;
+
+    if (!isInformational) complianceViolationCount++;
+
+    const description = isEn301549 && hasWcagTag ? `[EN 301 549 §9] ${v.description}` : v.description;
+
     for (const node of v.nodes) {
       issues.push({
         prefix: 'ACC',
         impact: v.impact,
-        description: v.description,
+        description,
         location: node.target.join(', '),
         docLink: wcagDocLink(v.tags),
         remediation: node.failureSummary ?? v.description,
         rule: v.id,
         pageUrl: page.url(),
+        isInformational: isInformational || undefined,
       });
     }
   }
@@ -130,6 +140,6 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
   return {
     issues,
     totalChecks: passesCount + violations.length,
-    scoringIssueCount: violations.length,
+    scoringIssueCount: isEn301549 ? complianceViolationCount : violations.length,
   };
 }
