@@ -2,6 +2,9 @@
 
 ## 2026-05-15
 
+### Added
+- `maxPages: 0` support in crawler — setting `crawl.maxPages` to `0` disables the page cap and crawls the full site; documented in README config reference
+
 ### Changed
 - Config schema redesigned — module-specific settings now nested inside each module entry; `wcag` and `standard` moved into `modules.accessibility`; `includeExternal` moved into `modules.brokenLinks`; top-level `wcag`, `brokenLinks`, and `standard` fields removed
 - `modules` values changed from booleans to objects with `enabled` plus module-specific fields (e.g. `{ "enabled": true, "wcag": { "version": "2.2", "level": "AA" } }`)

@@ -23,7 +23,9 @@ async function crawl(seed: string, maxDepth: number, maxPages: number, page: Pag
   // BFS queue entries: [url, depth]
   const queue: Array<[string, number]> = [[normalise(seed), 1]];
 
-  while (queue.length > 0 && result.length < maxPages) {
+  const unlimited = maxPages === 0;
+
+  while (queue.length > 0 && (unlimited || result.length < maxPages)) {
     const [url, depth] = queue.shift()!;
 
     if (visited.has(url)) continue;
@@ -34,7 +36,7 @@ async function crawl(seed: string, maxDepth: number, maxPages: number, page: Pag
 
     const links = await extractLinks(url, seedOrigin, page);
     for (const link of links) {
-      if (!visited.has(link) && result.length + queue.length < maxPages) {
+      if (!visited.has(link) && (unlimited || result.length + queue.length < maxPages)) {
         queue.push([link, depth + 1]);
       }
     }
