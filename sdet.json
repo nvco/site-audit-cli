@@ -8,6 +8,7 @@
     "privacy": false,
     "cookies": true,
     "securityHeaders": true,
+    "ssl": true,
     "brokenLinks": true
   },
   "crawl": {

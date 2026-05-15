@@ -1,3 +1,4 @@
+import { Page } from 'playwright';
 import { Config, Issue, ImpactLevel, AuditModuleResult } from '../types';
 
 interface HeaderCheck {
@@ -50,9 +51,18 @@ const HEADER_CHECKS: HeaderCheck[] = [
     remediation: 'Add a Referrer-Policy header (e.g. "strict-origin-when-cross-origin") to control how much referrer information is sent with requests.',
     docLink: 'https://owasp.org/www-project-secure-headers/#referrer-policy',
   },
+  {
+    header: 'permissions-policy',
+    rule: 'missing-permissions-policy',
+    impact: 'moderate',
+    description: 'Missing Permissions-Policy header',
+    remediation: 'Add a Permissions-Policy header to restrict browser feature access (e.g. "camera=(), microphone=(), geolocation=()") and reduce the attack surface.',
+    docLink: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Permissions-Policy',
+  },
 ];
 
 export async function runSecurityHeadersAudit(
+  page: Page,
   headers: Record<string, string>,
   pageUrl: string,
   _config: Config
@@ -74,5 +84,34 @@ export async function runSecurityHeadersAudit(
     }
   }
 
-  return { issues, totalChecks: HEADER_CHECKS.length };
+  // Mixed content: HTTP resources loaded on an HTTPS page
+  if (pageUrl.startsWith('https://')) {
+    const resourceSelectors = [
+      'img[src]', 'script[src]', 'iframe[src]', 'audio[src]',
+      'video[src]', 'embed[src]', 'object[data]', 'source[src]',
+      'link[rel="stylesheet"][href]',
+    ].join(',');
+
+    const mixedUrls = await page.$$eval(resourceSelectors, (els) =>
+      els
+        .map((el) => el.getAttribute('src') ?? el.getAttribute('data') ?? el.getAttribute('href') ?? '')
+        .filter((v) => v.startsWith('http:'))
+    );
+
+    for (const url of mixedUrls) {
+      issues.push({
+        prefix: 'SEC',
+        impact: 'serious',
+        description: `Mixed content: HTTP resource loaded on HTTPS page`,
+        location: url,
+        docLink: 'https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content',
+        remediation: `Replace the HTTP URL with its HTTPS equivalent: ${url}`,
+        rule: 'mixed-content',
+        pageUrl,
+      });
+    }
+  }
+
+  // totalChecks: 6 header checks + 1 mixed content check per page
+  return { issues, totalChecks: HEADER_CHECKS.length + 1 };
 }

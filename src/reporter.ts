@@ -8,10 +8,11 @@ const MODULE_LABELS: Record<IssuePrefix, string> = {
   PRI: 'Privacy',
   COO: 'Cookies',
   SEC: 'Security Headers',
+  SSL: 'SSL/TLS',
   LNK: 'Broken Links',
 };
 
-const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'LNK'];
+const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'SSL', 'LNK'];
 const IMPACT_ORDER: ImpactLevel[] = ['critical', 'serious', 'moderate', 'minor'];
 
 const IMPACT_COLORS: Record<ImpactLevel, string> = {

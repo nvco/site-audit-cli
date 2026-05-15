@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-05-15 (Phase 10)
+
+### Added
+- SSL/TLS auditor (`src/auditors/ssl.ts`) — 3 checks per unique hostname using Node `tls` and `http` modules (no Playwright): cert-expiry (critical if expired, serious if < 30 days), tls-version (serious if TLSv1/TLSv1.1 negotiated), https-redirect (serious if HTTP does not 301/302 to HTTPS)
+- `SSL` issue prefix and `SSL/TLS` module label — appears between Security Headers and Broken Links in all report formats
+- Permissions-Policy header check — added to `security-headers.ts` as 6th header check (impact: moderate)
+- Mixed content detection — `security-headers.ts` scans page DOM for HTTP resources on HTTPS pages via `page.$$eval()`; each insecure resource → one SEC issue
+
+### Changed
+- `src/auditors/security-headers.ts` — now accepts `page: Page` as first parameter for mixed content check; totalChecks updated to `HEADER_CHECKS.length + 1` (7 per page)
+- `src/runner.ts` — SSL auditor runs once per unique hostname (deduplication via `checkedSslHosts` set); passes `page` to security-headers auditor; SSL added to all prefix maps and counters
+- `src/types.ts` — `IssuePrefix` union extended with `'SSL'`; `Config.modules` now includes `ssl: boolean`
+- `src/config.ts` — defaults `modules.ssl` to `true` for configs written before Phase 10
+- `src/reporter.ts` — `SSL/TLS` added to `MODULE_LABELS` and `PREFIX_ORDER`
+- Root profiles (`sdet.json`, `compliance.json`, `full.json`) — `ssl: true` added to modules
+
 ## 2026-05-15 (Phase 9)
 
 ### Added

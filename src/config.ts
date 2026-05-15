@@ -42,6 +42,10 @@ function validate(raw: unknown, filePath: string): Config {
     throw new Error(`${filePath} "wcag.level" must be "A", "AA", or "AAA".`);
   }
 
+  // Default ssl module to true for configs written before Phase 10
+  const modules = c['modules'] as Record<string, unknown>;
+  if (modules['ssl'] === undefined) modules['ssl'] = true;
+
   if (!c['output']) {
     c['output'] = { formats: { markdown: true, html: true, pdf: true, json: true } };
   } else {

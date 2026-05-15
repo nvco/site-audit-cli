@@ -5,6 +5,7 @@ import { runAccessibilityAudit } from './auditors/accessibility';
 import { runPrivacyAudit } from './auditors/privacy';
 import { runCookieAudit } from './auditors/cookies';
 import { runSecurityHeadersAudit } from './auditors/security-headers';
+import { runSslAudit } from './auditors/ssl';
 import { runBrokenLinksAudit } from './auditors/broken-links';
 
 export async function runAudit(config: Config): Promise<AuditResult> {
@@ -22,8 +23,9 @@ export async function runAudit(config: Config): Promise<AuditResult> {
   }
 
   const rawIssues: Issue[] = [];
-  const moduleChecks: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, LNK: 0 };
-  const moduleScoringIssueCounts: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, LNK: 0 };
+  const moduleChecks: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, SSL: 0, LNK: 0 };
+  const moduleScoringIssueCounts: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, SSL: 0, LNK: 0 };
+  const checkedSslHosts = new Set<string>();
 
   for (let i = 0; i < urls.length; i++) {
     const url = urls[i];
@@ -45,7 +47,14 @@ export async function runAudit(config: Config): Promise<AuditResult> {
     if (config.modules.accessibility) auditors.push({ prefix: 'ACC', fn: () => runAccessibilityAudit(page, config) });
     if (config.modules.privacy) auditors.push({ prefix: 'PRI', fn: () => runPrivacyAudit(page, config) });
     if (config.modules.cookies) auditors.push({ prefix: 'COO', fn: () => runCookieAudit(page, config) });
-    if (config.modules.securityHeaders) auditors.push({ prefix: 'SEC', fn: () => runSecurityHeadersAudit(responseHeaders, url, config) });
+    if (config.modules.securityHeaders) auditors.push({ prefix: 'SEC', fn: () => runSecurityHeadersAudit(page, responseHeaders, url, config) });
+    if (config.modules.ssl) {
+      const host = new URL(url).hostname;
+      if (!checkedSslHosts.has(host)) {
+        checkedSslHosts.add(host);
+        auditors.push({ prefix: 'SSL', fn: () => runSslAudit(url, config) });
+      }
+    }
     if (config.modules.brokenLinks) auditors.push({ prefix: 'LNK', fn: () => runBrokenLinksAudit(page, config) });
 
     for (const { prefix, fn } of auditors) {
@@ -80,9 +89,9 @@ export async function runAudit(config: Config): Promise<AuditResult> {
 }
 
 
-const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'LNK'];
+const PREFIX_ORDER: IssuePrefix[] = ['ACC', 'PRI', 'COO', 'SEC', 'SSL', 'LNK'];
 const PREFIX_TO_MODULE: Record<IssuePrefix, keyof Config['modules']> = {
-  ACC: 'accessibility', PRI: 'privacy', COO: 'cookies', SEC: 'securityHeaders', LNK: 'brokenLinks',
+  ACC: 'accessibility', PRI: 'privacy', COO: 'cookies', SEC: 'securityHeaders', SSL: 'ssl', LNK: 'brokenLinks',
 };
 const IMPACT_ORDER = ['critical', 'serious', 'moderate', 'minor'];
 
@@ -142,7 +151,7 @@ function scoreGrade(score: number): string {
 }
 
 function assignIds(issues: Issue[]): Issue[] {
-  const counters: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, LNK: 0 };
+  const counters: Record<IssuePrefix, number> = { ACC: 0, PRI: 0, COO: 0, SEC: 0, SSL: 0, LNK: 0 };
   return issues.map((issue) => {
     counters[issue.prefix]++;
     const id = `${issue.prefix}-${String(counters[issue.prefix]).padStart(3, '0')}`;

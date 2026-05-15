@@ -1,4 +1,4 @@
-export type IssuePrefix = 'ACC' | 'PRI' | 'COO' | 'SEC' | 'LNK';
+export type IssuePrefix = 'ACC' | 'PRI' | 'COO' | 'SEC' | 'SSL' | 'LNK';
 export type ImpactLevel = 'critical' | 'serious' | 'moderate' | 'minor';
 
 export interface Issue {
@@ -35,6 +35,7 @@ export interface Config {
     privacy: boolean;
     cookies: boolean;
     securityHeaders: boolean;
+    ssl: boolean;
     brokenLinks: boolean;
   };
   crawl: {
