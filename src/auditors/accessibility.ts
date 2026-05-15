@@ -97,7 +97,8 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
   );
   await page.addScriptTag({ path: axePath });
 
-  const tags = wcagTags(config.wcag.version, config.wcag.level);
+  const { wcag, standard } = config.modules.accessibility;
+  const tags = wcagTags(wcag.version, wcag.level);
 
   const { violations, passesCount } = await page.evaluate((runTags) => {
     return new Promise<{ violations: AxeViolation[], passesCount: number }>((resolve) => {
@@ -110,7 +111,7 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
     });
   }, tags);
 
-  const isEn301549 = config.standard === 'en301549';
+  const isEn301549 = standard === 'en301549';
   const issues: Issue[] = [];
   let complianceViolationCount = 0;
 

@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config } from './types';
+import { Config, AccessibilityModuleConfig, BrokenLinksModuleConfig, BaseModuleConfig } from './types';
 
 export function loadConfig(configPath = 'config/full.json'): Config {
   const fullPath = path.resolve(configPath);
@@ -19,10 +19,32 @@ export function loadConfig(configPath = 'config/full.json'): Config {
   return validate(raw, fullPath);
 }
 
+function normalizeBase(val: unknown, defaults: Partial<BaseModuleConfig> = {}): BaseModuleConfig {
+  const enabled = typeof val === 'boolean' ? val : (val as Record<string, unknown>)?.['enabled'] !== false;
+  return { enabled, ...defaults };
+}
+
+function normalizeAccessibility(val: unknown): AccessibilityModuleConfig {
+  const base = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
+  const enabled = base['enabled'] !== false;
+  const wcag = (base['wcag'] as Record<string, string> | undefined) ?? {};
+  const version = (['2.0', '2.1', '2.2'].includes(wcag['version']) ? wcag['version'] : '2.2') as '2.0' | '2.1' | '2.2';
+  const level = (['A', 'AA', 'AAA'].includes(wcag['level']) ? wcag['level'] : 'AA') as 'A' | 'AA' | 'AAA';
+  const standard = base['standard'] === 'en301549' ? 'en301549' : 'wcag';
+  return { enabled, wcag: { version, level }, standard };
+}
+
+function normalizeBrokenLinks(val: unknown): BrokenLinksModuleConfig {
+  const base = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
+  const enabled = base['enabled'] !== false;
+  const includeExternal = base['includeExternal'] === true;
+  return { enabled, includeExternal };
+}
+
 function validate(raw: unknown, filePath: string): Config {
   const c = raw as Record<string, unknown>;
 
-  const required = ['wcag', 'modules', 'crawl', 'brokenLinks', 'suppress', 'urls'];
+  const required = ['modules', 'crawl', 'suppress', 'urls'];
   for (const key of required) {
     if (!(key in c)) {
       throw new Error(`${filePath} is missing required field: "${key}"`);
@@ -34,17 +56,15 @@ function validate(raw: unknown, filePath: string): Config {
     throw new Error(`${filePath} "urls" must be a non-empty array of URLs.`);
   }
 
-  const wcag = c['wcag'] as Record<string, string>;
-  if (!['2.0', '2.1', '2.2'].includes(wcag['version'])) {
-    throw new Error(`${filePath} "wcag.version" must be "2.0", "2.1", or "2.2".`);
-  }
-  if (!['A', 'AA', 'AAA'].includes(wcag['level'])) {
-    throw new Error(`${filePath} "wcag.level" must be "A", "AA", or "AAA".`);
-  }
-
-  // Default ssl module to true for configs written before Phase 10
-  const modules = c['modules'] as Record<string, unknown>;
-  if (modules['ssl'] === undefined) modules['ssl'] = true;
+  const rawModules = (c['modules'] as Record<string, unknown>) ?? {};
+  c['modules'] = {
+    accessibility: normalizeAccessibility(rawModules['accessibility']),
+    privacy: normalizeBase(rawModules['privacy']),
+    cookies: normalizeBase(rawModules['cookies']),
+    securityHeaders: normalizeBase(rawModules['securityHeaders']),
+    ssl: normalizeBase(rawModules['ssl']),
+    brokenLinks: normalizeBrokenLinks(rawModules['brokenLinks']),
+  };
 
   if (!c['output']) {
     c['output'] = { formats: { markdown: true, html: true, pdf: true, json: true } };

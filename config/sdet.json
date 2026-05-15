@@ -1,23 +1,16 @@
 {
-  "wcag": {
-    "version": "2.2",
-    "level": "AA"
-  },
   "modules": {
-    "accessibility": false,
-    "privacy": false,
-    "cookies": true,
-    "securityHeaders": true,
-    "ssl": true,
-    "brokenLinks": true
+    "accessibility": { "enabled": false },
+    "privacy": { "enabled": false },
+    "cookies": { "enabled": true },
+    "securityHeaders": { "enabled": true },
+    "ssl": { "enabled": true },
+    "brokenLinks": {
+      "enabled": true,
+      "includeExternal": false
+    }
   },
-  "crawl": {
-    "depth": 2,
-    "maxPages": 10
-  },
-  "brokenLinks": {
-    "includeExternal": false
-  },
+  "crawl": { "depth": 2, "maxPages": 10 },
   "output": {
     "formats": {
       "markdown": true,

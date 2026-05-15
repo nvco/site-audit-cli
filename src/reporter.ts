@@ -69,10 +69,10 @@ function deriveRunFolder(result: AuditResult): string {
 }
 
 function reportTitle(result: AuditResult): string {
-  const enabledModules = PREFIX_ORDER.filter((p) => {
-    const key = ({ ACC: 'accessibility', PRI: 'privacy', COO: 'cookies', SEC: 'securityHeaders', LNK: 'brokenLinks' } as Record<IssuePrefix, keyof typeof result.config.modules>)[p];
-    return result.config.modules[key];
-  });
+  const keyMap: Record<IssuePrefix, keyof typeof result.config.modules> = {
+    ACC: 'accessibility', PRI: 'privacy', COO: 'cookies', SEC: 'securityHeaders', SSL: 'ssl', LNK: 'brokenLinks',
+  };
+  const enabledModules = PREFIX_ORDER.filter((p) => result.config.modules[keyMap[p]].enabled);
   return enabledModules.length === 1 ? `Audit Report: ${MODULE_LABELS[enabledModules[0]]}` : 'Audit Report';
 }
 
@@ -84,7 +84,7 @@ function shortLocation(location: string): string {
 
 function buildMarkdown(result: AuditResult, issues: Issue[], title: string): string {
   const lines: string[] = [];
-  const { version, level } = result.config.wcag;
+  const { version, level } = result.config.modules.accessibility.wcag;
   const toolVersion = require('../package.json').version as string;
 
   lines.push(`# ${title}\n`);
@@ -184,7 +184,7 @@ function buildJson(result: AuditResult, issues: Issue[]): string {
 // --- HTML ---
 
 function buildHtml(result: AuditResult, issues: Issue[], title: string): string {
-  const { version, level } = result.config.wcag;
+  const { version, level } = result.config.modules.accessibility.wcag;
   const toolVersion = require('../package.json').version as string;
 
   const scorecardHtml = htmlScorecard(result);

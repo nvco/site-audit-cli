@@ -2,6 +2,19 @@
 
 ## 2026-05-15
 
+### Changed
+- Config schema redesigned — module-specific settings now nested inside each module entry; `wcag` and `standard` moved into `modules.accessibility`; `includeExternal` moved into `modules.brokenLinks`; top-level `wcag`, `brokenLinks`, and `standard` fields removed
+- `modules` values changed from booleans to objects with `enabled` plus module-specific fields (e.g. `{ "enabled": true, "wcag": { "version": "2.2", "level": "AA" } }`)
+- `src/types.ts` — `Config` redesigned with `BaseModuleConfig`, `AccessibilityModuleConfig`, `BrokenLinksModuleConfig`; removed top-level `wcag`, `brokenLinks`, `standard` fields
+- `src/config.ts` — validation and defaulting rewritten to normalize module objects; handles both old boolean and new object format gracefully
+- `src/auditors/accessibility.ts` — reads `config.modules.accessibility.wcag` and `.standard`
+- `src/auditors/broken-links.ts` — reads `config.modules.brokenLinks.includeExternal`
+- `src/runner.ts` — module enabled checks updated to `.enabled`; scoring uses `.enabled`
+- `src/reporter.ts` — WCAG version/level read from `config.modules.accessibility.wcag`; `reportTitle` updated
+- `src/index.ts` — WCAG version/level read from `config.modules.accessibility.wcag`
+- `config/full.json`, `config/compliance.json`, `config/sdet.json` — restructured to new nested module format
+- `README.md` — configuration reference updated to show new nested module structure
+
 ### Added
 - `config/` folder — three profiles (`sdet.json`, `compliance.json`, `full.json`) consolidated here; replaces scattered root-level files and `config-examples/`
 

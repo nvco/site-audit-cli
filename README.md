@@ -122,23 +122,24 @@ jobs:
 
 ```jsonc
 {
-  "wcag": {
-    "version": "2.2",   // "2.0" | "2.1" | "2.2"
-    "level": "AA"       // "A" | "AA" | "AAA"
-  },
   "modules": {
-    "accessibility": true,
-    "privacy": true,
-    "cookies": true,
-    "securityHeaders": true,
-    "brokenLinks": true
+    "accessibility": {
+      "enabled": true,
+      "wcag": { "version": "2.2", "level": "AA" }, // "2.0"|"2.1"|"2.2", "A"|"AA"|"AAA"
+      "standard": "wcag"                            // "wcag" | "en301549"
+    },
+    "privacy":        { "enabled": true },
+    "cookies":        { "enabled": true },
+    "securityHeaders":{ "enabled": true },
+    "ssl":            { "enabled": true },
+    "brokenLinks": {
+      "enabled": true,
+      "includeExternal": false  // true to also check outgoing external links
+    }
   },
   "crawl": {
-    "depth": 1,         // 1 = target page only; 2 = target + all linked pages
-    "maxPages": 10      // hard cap on pages crawled
-  },
-  "brokenLinks": {
-    "includeExternal": false   // true to also check outgoing external links
+    "depth": 1,       // 1 = target page only; 2 = target + all linked pages
+    "maxPages": 10    // hard cap on pages crawled
   },
   "output": {
     "formats": {
@@ -152,6 +153,7 @@ jobs:
     // Suppress known accepted issues by rule + URL pattern.
     // { "rule": "color-contrast", "url": "*" }
   ],
+  "compareLastRun": false,  // true to diff against .last-run.json and flag new violations
   "urls": [
     // One URL → crawl mode (follows links up to depth/maxPages)
     // Multiple URLs → list mode (audits exactly those pages)

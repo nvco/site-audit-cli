@@ -44,18 +44,18 @@ export async function runAudit(config: Config): Promise<AuditResult> {
 
     const auditors: Array<{ prefix: IssuePrefix; fn: () => Promise<AuditModuleResult> }> = [];
 
-    if (config.modules.accessibility) auditors.push({ prefix: 'ACC', fn: () => runAccessibilityAudit(page, config) });
-    if (config.modules.privacy) auditors.push({ prefix: 'PRI', fn: () => runPrivacyAudit(page, config) });
-    if (config.modules.cookies) auditors.push({ prefix: 'COO', fn: () => runCookieAudit(page, config) });
-    if (config.modules.securityHeaders) auditors.push({ prefix: 'SEC', fn: () => runSecurityHeadersAudit(page, responseHeaders, url, config) });
-    if (config.modules.ssl) {
+    if (config.modules.accessibility.enabled) auditors.push({ prefix: 'ACC', fn: () => runAccessibilityAudit(page, config) });
+    if (config.modules.privacy.enabled) auditors.push({ prefix: 'PRI', fn: () => runPrivacyAudit(page, config) });
+    if (config.modules.cookies.enabled) auditors.push({ prefix: 'COO', fn: () => runCookieAudit(page, config) });
+    if (config.modules.securityHeaders.enabled) auditors.push({ prefix: 'SEC', fn: () => runSecurityHeadersAudit(page, responseHeaders, url, config) });
+    if (config.modules.ssl.enabled) {
       const host = new URL(url).hostname;
       if (!checkedSslHosts.has(host)) {
         checkedSslHosts.add(host);
         auditors.push({ prefix: 'SSL', fn: () => runSslAudit(url, config) });
       }
     }
-    if (config.modules.brokenLinks) auditors.push({ prefix: 'LNK', fn: () => runBrokenLinksAudit(page, config) });
+    if (config.modules.brokenLinks.enabled) auditors.push({ prefix: 'LNK', fn: () => runBrokenLinksAudit(page, config) });
 
     for (const { prefix, fn } of auditors) {
       try {
@@ -128,7 +128,7 @@ function computeModuleScores(
 ): Partial<Record<IssuePrefix, ModuleScore>> {
   const scores: Partial<Record<IssuePrefix, ModuleScore>> = {};
   for (const prefix of PREFIX_ORDER) {
-    if (!config.modules[PREFIX_TO_MODULE[prefix]]) continue;
+    if (!config.modules[PREFIX_TO_MODULE[prefix]].enabled) continue;
     const total = moduleChecks[prefix];
     const failed = moduleScoringIssueCounts[prefix];
     const score = total === 0 ? 100 : Math.max(0, Math.round(((total - failed) / total) * 100));

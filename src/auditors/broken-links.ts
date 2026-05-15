@@ -18,7 +18,7 @@ export async function runBrokenLinksAudit(page: Page, config: Config): Promise<A
       parsed.hash = '';
       const url = parsed.href;
       const isInternal = parsed.origin === pageOrigin;
-      if (isInternal || config.brokenLinks.includeExternal) {
+      if (isInternal || config.modules.brokenLinks.includeExternal) {
         toCheck.add(url);
       }
     } catch {

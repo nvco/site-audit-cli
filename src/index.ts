@@ -10,7 +10,8 @@ async function main() {
   const toolVersion = require('../package.json').version;
 
   console.log(`site-audit-cli v${toolVersion}`);
-  console.log(`Mode: ${mode} | URLs: ${config.urls.length} | WCAG ${config.wcag.version} Level ${config.wcag.level}`);
+  const { wcag } = config.modules.accessibility;
+  console.log(`Mode: ${mode} | URLs: ${config.urls.length} | WCAG ${wcag.version} Level ${wcag.level}`);
 
   const lastRun = config.compareLastRun ? loadLastRun() : null;
 
