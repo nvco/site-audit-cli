@@ -119,7 +119,8 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
 
 function markdownIssue(issue: Issue): string {
   const lines: string[] = [];
-  lines.push(`### ${issue.id}\n`);
+  const newTag = issue.isNew ? ' `[NEW]`' : '';
+  lines.push(`### ${issue.id}${newTag}\n`);
   lines.push(`- **Impact:** ${issue.impact}`);
   lines.push(`- **Issue:** ${issue.description}`);
   if (issue.prefix === 'ACC') {
@@ -309,10 +310,14 @@ function htmlIssue(issue: Issue, informational = false): string {
     ? `<code>${shortLocation(issue.location)}</code> <span style="color:#999;font-size:12px">${issue.location}</span>`
     : `<code>${issue.location}</code>`;
 
+  const newBadge = issue.isNew
+    ? `<span class="badge" style="background:#1a56db22;color:#1a56db">new</span>`
+    : '';
   return `<div class="issue">
     <div class="issue-header" style="background:${bg}">
       <span class="issue-id">${issue.id}</span>
       <span class="badge" style="background:${color}22;color:${color}">${issue.impact}</span>
+      ${newBadge}
       <h3 style="font-weight:500;text-transform:none;letter-spacing:0;font-size:14px;color:#222">${escapeHtml(issue.description)}</h3>
     </div>
     <dl class="issue-body">

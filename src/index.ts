@@ -1,4 +1,5 @@
 import { loadConfig } from './config';
+import { loadLastRun, saveLastRun, markNewIssues } from './regression';
 
 const args = process.argv.slice(2);
 
@@ -11,8 +12,25 @@ async function main() {
   console.log(`site-audit-cli v${toolVersion}`);
   console.log(`Mode: ${mode} | URLs: ${config.urls.length} | WCAG ${config.wcag.version} Level ${config.wcag.level}`);
 
+  const lastRun = config.compareLastRun ? loadLastRun() : null;
+
   const { runAudit } = await import('./runner');
   const result = await runAudit(config);
+
+  if (lastRun) {
+    result.issues = markNewIssues(result.issues, lastRun);
+    const newIssues = result.issues.filter((i) => i.isNew && !i.isInformational);
+    if (newIssues.length > 0) {
+      console.log(`\n${newIssues.length} NEW violation(s) since last run (${lastRun.date})`);
+      for (const issue of newIssues) {
+        console.log(`  [NEW] ${issue.id} — ${issue.description}`);
+      }
+    } else {
+      console.log(`\nNo new violations since last run (${lastRun.date})`);
+    }
+  }
+
+  saveLastRun(result.issues, result.runDate);
 
   const { generateReports } = await import('./reporter');
   const { runDir } = await generateReports(result, 'reports');

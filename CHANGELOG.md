@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-05-15 (Phase 12)
+
+### Added
+- Regression detection (`src/regression.ts`) — fingerprints every issue by `rule|pageUrl|location` (trailing slashes normalised); saves `.last-run.json` after every run; on subsequent runs with `compareLastRun: true`, diffs current issues against the baseline and prints new violations to console
+- `compareLastRun` config field — opt-in regression comparison; when enabled, loads `.last-run.json` and marks issues not seen in the previous run as `isNew`
+- `[NEW]` badge in HTML reports and `` `[NEW]` `` tag in markdown headings for newly detected issues
+- `.last-run.json` added to `.gitignore`
+
+### Changed
+- `src/types.ts` — `Issue` gains `isNew?: boolean`; `Config` gains `compareLastRun?: boolean`
+- `src/index.ts` — loads and saves regression baseline; prints new violation summary to console before report generation
+
 ## 2026-05-15 (Phase 11)
 
 ### Added

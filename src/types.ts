@@ -12,6 +12,7 @@ export interface Issue {
   rule: string;
   pageUrl: string;
   isInformational?: boolean;
+  isNew?: boolean;
 }
 
 export interface SuppressRule {
@@ -32,6 +33,7 @@ export interface Config {
     level: 'A' | 'AA' | 'AAA';
   };
   standard?: 'wcag' | 'en301549';
+  compareLastRun?: boolean;
   modules: {
     accessibility: boolean;
     privacy: boolean;
