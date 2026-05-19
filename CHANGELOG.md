@@ -2,6 +2,12 @@
 
 ## 2026-05-19
 
+### Added
+- `todo-13-docker.md` — full task list for Phase 13 (Docker): Dockerfile fixes, docker-compose.yml volume updates, .dockerignore, verification steps, README section
+
+### Changed
+- `CLAUDE.md` — added "What's Left" section pointing to Phase 13 and `todo-13-docker.md`; Docker command examples updated
+
 ### Changed
 - `CLAUDE.md` — removed stale reference to `PLAN.md` as the design spec; `PLAN.md` is now documented as a historical record; `CLAUDE.md` and `README.md` are the authoritative references
 

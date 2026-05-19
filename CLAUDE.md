@@ -21,9 +21,14 @@ node dist/index.js                      # full audit (defaults to config/full.js
 node dist/index.js config/sdet.json
 node dist/index.js config/compliance.json
 
-# Docker (Phase 13 — not yet implemented)
+# Docker (Phase 13 — not yet implemented, see todo-13-docker.md)
 docker compose up
+docker compose run site-audit-cli config/sdet.json
 ```
+
+## What's Left
+
+**Phase 13 — Docker** is the only remaining planned phase. See `todo-13-docker.md` for the full task list. The `Dockerfile` and `docker-compose.yml` exist but are outdated and untested against the current config layout.
 
 There is no test runner command — Playwright is used as a library, not via `playwright test`.
 
