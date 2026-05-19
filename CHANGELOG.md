@@ -3,6 +3,23 @@
 ## 2026-05-19
 
 ### Added
+- Phase 13 Docker support — Dockerfile updated to use Playwright's managed Chromium, docker-compose.yml volumes corrected, `.dockerignore` updated, verified end-to-end with test runs
+- `.env.example` — timezone configuration for Docker; defaults to UTC, override with any IANA timezone
+- `.github/workflows/audit.yml` — manually triggered GitHub Actions workflow with profile selector; push/PR triggers available via commented-out config
+- Run duration added to reports — all formats now show date, time, and runtime (e.g. `2026-05-19 13:47:09 (runtime: 2s)`)
+- HTML report fix formatting — remediation text now renders as structured bullet lists matching the markdown report
+
+### Changed
+- README restructured into Running (Docker, Local, GitHub Actions) and Configuration (Config profiles, Audit modules, Output formats, Timezone, Configuration reference) sections
+- `src/reporter.ts` — `formatRemediationHtml` added for multi-section bullet list rendering; `formatRunDate` and `formatDuration` helpers added
+- `src/runner.ts` — `startTime` captured at audit start; `runDurationMs` added to result
+- `src/types.ts` — `runDurationMs: number` added to `AuditResult`
+- CLAUDE.md — Phase 13 marked complete; Docker commands updated; "What's Left" updated to reflect all phases done
+
+### Removed
+- `todo-13-docker.md` — all tasks complete, moved to `archive/`
+
+### Added
 - `todo-13-docker.md` — full task list for Phase 13 (Docker): Dockerfile fixes, docker-compose.yml volume updates, .dockerignore, verification steps, README section
 
 ### Changed

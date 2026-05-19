@@ -1,7 +1,9 @@
 services:
   site-audit-cli:
     build: .
+    environment:
+      - TZ
     volumes:
-      - ./config.json:/app/config.json:ro
+      - ./config:/app/config:ro
       - ./reports:/app/reports
     working_dir: /app

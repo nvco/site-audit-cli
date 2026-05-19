@@ -1,0 +1,33 @@
+name: Site Audit
+
+on:
+  # Uncomment to run automatically on every push and pull request:
+  # push:
+  # pull_request:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Config profile to run
+        required: true
+        default: config/full.json
+        type: choice
+        options:
+          - config/full.json
+          - config/sdet.json
+          - config/compliance.json
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci && npx playwright install chromium --with-deps
+      - run: node dist/index.js ${{ github.event.inputs.profile }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: audit-report
+          path: reports/

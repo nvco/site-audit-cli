@@ -80,6 +80,7 @@ export interface ModuleScore {
 export interface AuditResult {
   config: Config;
   runDate: string;
+  runDurationMs: number;
   pagesAudited: string[];
   issues: Issue[];
   moduleScores: Partial<Record<IssuePrefix, ModuleScore>>;

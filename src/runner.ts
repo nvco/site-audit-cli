@@ -9,6 +9,7 @@ import { runSslAudit } from './auditors/ssl';
 import { runBrokenLinksAudit } from './auditors/broken-links';
 
 export async function runAudit(config: Config): Promise<AuditResult> {
+  const startTime = Date.now();
   const browser = await chromium.launch();
   // bypassCSP so axe-core can be injected regardless of the page's Content-Security-Policy
   const context = await browser.newContext({ bypassCSP: true });
@@ -82,6 +83,7 @@ export async function runAudit(config: Config): Promise<AuditResult> {
   return {
     config,
     runDate: new Date().toISOString(),
+    runDurationMs: Date.now() - startTime,
     pagesAudited: urls,
     issues,
     moduleScores,

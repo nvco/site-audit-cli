@@ -21,16 +21,14 @@ node dist/index.js                      # full audit (defaults to config/full.js
 node dist/index.js config/sdet.json
 node dist/index.js config/compliance.json
 
-# Docker (Phase 13 — not yet implemented, see todo-13-docker.md)
+# Docker
 docker compose up
 docker compose run site-audit-cli config/sdet.json
 ```
 
 ## What's Left
 
-**Phase 13 — Docker** is the only remaining planned phase. See `todo-13-docker.md` for the full task list. The `Dockerfile` and `docker-compose.yml` exist but are outdated and untested against the current config layout.
-
-There is no test runner command — Playwright is used as a library, not via `playwright test`.
+All planned phases are complete. There is no test runner command — Playwright is used as a library, not via `playwright test`.
 
 ## Slash Commands
 
@@ -83,11 +81,13 @@ src/
 config/                   # Config profiles (sdet.json, compliance.json, full.json)
 reports/                  # Generated output (gitignored)
 archive/                  # Completed TODO files
+.github/workflows/
+└── audit.yml             # Manually triggered GitHub Actions workflow with profile selector
 ```
 
 ## Auditor Contract
 
-Every auditor returns `AuditModuleResult { issues: Issue[], totalChecks: number, scoringIssueCount?: number }`. The runner accumulates totalChecks per module, computes scores, applies suppression, assigns IDs.
+Every auditor returns `AuditModuleResult { issues: Issue[], totalChecks: number, scoringIssueCount?: number }`. The runner accumulates totalChecks per module, computes scores, applies suppression, assigns IDs. `AuditResult` includes `runDate` (ISO string), `runDurationMs` (ms elapsed), `pagesAudited`, `issues`, `moduleScores`, and `overallScore`.
 
 ```typescript
 type IssuePrefix = 'ACC' | 'PRI' | 'COO' | 'SEC' | 'SSL' | 'LNK';

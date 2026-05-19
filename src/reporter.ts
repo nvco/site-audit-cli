@@ -3,6 +3,19 @@ import * as path from 'path';
 import { chromium } from 'playwright';
 import { AuditResult, Issue, IssuePrefix, ImpactLevel, ModuleScore } from './types';
 
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.round(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
+function formatRunDate(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 const MODULE_LABELS: Record<IssuePrefix, string> = {
   ACC: 'Accessibility',
   PRI: 'Privacy',
@@ -141,7 +154,7 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
 
   const metaFields = [
     `**Target:** ${result.config.urls.join(', ')}`,
-    `**Run date:** ${result.runDate.slice(0, 10)}`,
+    `**Run date:** ${formatRunDate(result.runDate)} (runtime: ${formatDuration(result.runDurationMs)})`,
     `**Pages audited:** ${result.pagesAudited.length}`,
     `**WCAG:** ${version} Level ${level}`,
     `**Crawl:** depth ${depth}, max ${maxPages === 0 ? 'unlimited' : maxPages} pages`,
@@ -185,6 +198,33 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
   }
 
   return lines.join('\n');
+}
+
+function formatRemediationHtml(text: string): string {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (lines.length <= 1) return escapeHtml(text);
+  const isHeader = (line: string) => /^Fix (all|any) of the following:/i.test(line);
+
+  const html: string[] = [];
+  let items: string[] = [];
+
+  const flushItems = () => {
+    if (items.length) {
+      html.push(`<ul style="margin:2px 0 6px;padding-left:20px">${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`);
+      items = [];
+    }
+  };
+
+  for (const line of lines) {
+    if (isHeader(line)) {
+      flushItems();
+      html.push(`<p style="margin:4px 0 2px;font-weight:500">${escapeHtml(line)}</p>`);
+    } else {
+      items.push(line);
+    }
+  }
+  flushItems();
+  return html.join('');
 }
 
 function formatRemediation(text: string): string {
@@ -242,6 +282,7 @@ function buildJson(result: AuditResult, issues: Issue[]): string {
   const output = {
     url: result.config.urls[0],
     date: result.runDate.slice(0, 10),
+    durationMs: result.runDurationMs,
     toolVersion,
     pagesAudited: result.pagesAudited,
     overall: result.overallScore,
@@ -345,7 +386,7 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
   <h1>${title}</h1>
   <dl class="meta">
     <dt>Target</dt><dd>${result.config.urls.join(', ')}</dd>
-    <dt>Run date</dt><dd>${result.runDate.slice(0, 10)}</dd>
+    <dt>Run date</dt><dd>${formatRunDate(result.runDate)} (runtime: ${formatDuration(result.runDurationMs)})</dd>
     <dt>Pages audited</dt><dd>${result.pagesAudited.length}</dd>
     <dt>WCAG</dt><dd>${version} Level ${level}</dd>
     <dt>Crawl</dt><dd>depth ${result.config.crawl.depth}, max ${result.config.crawl.maxPages === 0 ? 'unlimited' : result.config.crawl.maxPages} pages</dd>
@@ -423,7 +464,7 @@ function htmlIssue(issue: Issue, informational = false): string {
       <dt>${locationLabel}</dt><dd>${locationValue}</dd>
       <dt>URL</dt><dd><a href="${issue.pageUrl}">${issue.pageUrl}</a></dd>
       <dt>Reference</dt><dd><a href="${issue.docLink}">${issue.docLink}</a></dd>
-      <dt>Fix</dt><dd>${escapeHtml(issue.remediation)}</dd>
+      <dt>Fix</dt><dd>${formatRemediationHtml(issue.remediation)}</dd>
     </dl>
   </div>`;
 }
