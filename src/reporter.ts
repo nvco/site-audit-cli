@@ -30,42 +30,76 @@ const IMPACT_BG: Record<ImpactLevel, string> = {
 };
 
 export async function generateReports(result: AuditResult, outputBase: string): Promise<{ runDir: string }> {
-  const runDir = path.join(outputBase, deriveRunFolder(result));
+  const keepDays = result.config.keepRunsForDays ?? 0;
+  if (keepDays > 0) purgeOldRuns(outputBase, keepDays);
+
+  const timestamp = deriveTimestamp(result);
+  const runDir = path.join(outputBase, timestamp);
   fs.mkdirSync(runDir, { recursive: true });
 
+  const baseName = deriveBaseName(result, timestamp);
   const formats = result.config.output?.formats ?? { markdown: true, html: true, pdf: true, json: true };
   const issues = result.issues;
   const title = reportTitle(result);
 
   if (formats.markdown) {
-    fs.writeFileSync(path.join(runDir, 'report.md'), buildMarkdown(result, issues, title));
-    console.log(`  Markdown: ${path.join(runDir, 'report.md')}`);
+    const p = path.join(runDir, `${baseName}.md`);
+    fs.writeFileSync(p, buildMarkdown(result, issues, title));
+    console.log(`  Markdown: ${p}`);
   }
 
   if (formats.json) {
-    fs.writeFileSync(path.join(runDir, 'report.json'), buildJson(result, issues));
-    console.log(`  JSON:     ${path.join(runDir, 'report.json')}`);
+    const p = path.join(runDir, `${baseName}.json`);
+    fs.writeFileSync(p, buildJson(result, issues));
+    console.log(`  JSON:     ${p}`);
   }
 
-  const htmlPath = path.join(runDir, 'report.html');
+  const htmlPath = path.join(runDir, `${baseName}.html`);
   if (formats.html || formats.pdf) {
     fs.writeFileSync(htmlPath, buildHtml(result, issues, title));
     if (formats.html) console.log(`  HTML:     ${htmlPath}`);
   }
 
   if (formats.pdf) {
-    await generatePdf(htmlPath, path.join(runDir, 'report.pdf'));
-    console.log(`  PDF:      ${path.join(runDir, 'report.pdf')}`);
+    const pdfPath = path.join(runDir, `${baseName}.pdf`);
+    await generatePdf(htmlPath, pdfPath);
+    console.log(`  PDF:      ${pdfPath}`);
     if (!formats.html) fs.unlinkSync(htmlPath);
   }
 
   return { runDir };
 }
 
-function deriveRunFolder(result: AuditResult): string {
+function purgeOldRuns(outputBase: string, keepDays: number): void {
+  if (!fs.existsSync(outputBase)) return;
+  const cutoff = Date.now() - keepDays * 24 * 60 * 60 * 1000;
+  const pattern = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2})$/;
+  for (const entry of fs.readdirSync(outputBase)) {
+    const match = entry.match(pattern);
+    if (!match) continue;
+    const [, yr, mo, dy, hr, mn, sc] = match;
+    const folderDate = new Date(`${yr}-${mo}-${dy}T${hr}:${mn}:${sc}`).getTime();
+    if (folderDate < cutoff) {
+      fs.rmSync(path.join(outputBase, entry), { recursive: true, force: true });
+    }
+  }
+}
+
+function deriveTimestamp(result: AuditResult): string {
   const d = new Date(result.runDate);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+function deriveBaseName(result: AuditResult, timestamp: string): string {
+  try {
+    const hostname = new URL(result.config.urls[0]).hostname;
+    const parts = hostname.split('.');
+    const withoutTld = parts.length > 1 ? parts.slice(0, -1).join('-') : hostname;
+    return `${withoutTld}-${timestamp}`;
+  } catch {
+    return timestamp;
+  }
 }
 
 function reportTitle(result: AuditResult): string {
@@ -80,22 +114,48 @@ function shortLocation(location: string): string {
   return location.split('>').pop()?.trim() ?? location;
 }
 
+function applyRuleCap(issues: Issue[], max: number): { display: Issue[]; hiddenByRule: Map<string, number> } {
+  if (max <= 0) return { display: issues, hiddenByRule: new Map() };
+  const seen = new Map<string, number>();
+  const display: Issue[] = [];
+  const hiddenByRule = new Map<string, number>();
+  for (const issue of issues) {
+    const count = seen.get(issue.rule) ?? 0;
+    if (count < max) {
+      display.push(issue);
+      seen.set(issue.rule, count + 1);
+    } else {
+      hiddenByRule.set(issue.rule, (hiddenByRule.get(issue.rule) ?? 0) + 1);
+    }
+  }
+  return { display, hiddenByRule };
+}
+
 // --- Markdown ---
 
 function buildMarkdown(result: AuditResult, issues: Issue[], title: string): string {
   const lines: string[] = [];
   const { version, level } = result.config.modules.accessibility.wcag;
-  const toolVersion = require('../package.json').version as string;
+  const { depth, maxPages } = result.config.crawl;
+  const maxPerRuleDisplay = (result.config.maxIssuesPerRule ?? 5) === 0 ? 'unlimited' : String(result.config.maxIssuesPerRule ?? 5);
+
+  const metaFields = [
+    `**Target:** ${result.config.urls.join(', ')}`,
+    `**Run date:** ${result.runDate.slice(0, 10)}`,
+    `**Pages audited:** ${result.pagesAudited.length}`,
+    `**WCAG:** ${version} Level ${level}`,
+    `**Crawl:** depth ${depth}, max ${maxPages === 0 ? 'unlimited' : maxPages} pages`,
+    `**Max issues per rule:** ${maxPerRuleDisplay}`,
+  ];
+  if (result.config.compareLastRun) metaFields.push(`**Comparing to last run:** yes`);
 
   lines.push(`# ${title}\n`);
-  lines.push(`**Target:** ${result.config.urls.join(', ')}`);
-  lines.push(`**Run date:** ${result.runDate.slice(0, 10)}`);
-  lines.push(`**Tool version:** ${toolVersion}`);
-  lines.push(`**Pages audited:** ${result.pagesAudited.length}`);
-  lines.push(`**WCAG:** ${version} Level ${level}`);
+  lines.push(metaFields.join('  \n'));
   lines.push('');
   lines.push('## Summary\n');
   lines.push(markdownScorecard(result));
+
+  const maxPerRule = result.config.maxIssuesPerRule ?? 5;
 
   for (const prefix of PREFIX_ORDER) {
     const moduleIssues = issues.filter((i) => i.prefix === prefix);
@@ -103,18 +163,39 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
     lines.push(`## ${MODULE_LABELS[prefix]}\n`);
     const compliance = moduleIssues.filter((i) => !i.isInformational);
     const informational = moduleIssues.filter((i) => i.isInformational);
-    for (const issue of compliance) {
+    const { display, hiddenByRule } = applyRuleCap(compliance, maxPerRule);
+    for (const issue of display) {
       lines.push(markdownIssue(issue));
+    }
+    if (hiddenByRule.size > 0) {
+      const bullets = [...hiddenByRule.entries()].map(([rule, count]) => `- ${count} more \`${rule}\``).join('\n');
+      lines.push(`---\n\n**Violations not shown:**\n${bullets}\n\nSet \`"maxIssuesPerRule": 0\` in your config to include all in the report.\n`);
     }
     if (informational.length > 0) {
       lines.push(`### Informational (does not affect score or exit code)\n`);
-      for (const issue of informational) {
+      const { display: infoDisplay, hiddenByRule: infoHidden } = applyRuleCap(informational, maxPerRule);
+      for (const issue of infoDisplay) {
         lines.push(markdownIssue(issue));
+      }
+      if (infoHidden.size > 0) {
+        const bullets = [...infoHidden.entries()].map(([rule, count]) => `- ${count} more \`${rule}\``).join('\n');
+        lines.push(`---\n\n**Violations not shown:**\n${bullets}\n\nSet \`"maxIssuesPerRule": 0\` in your config to include all in the report.\n`);
       }
     }
   }
 
   return lines.join('\n');
+}
+
+function formatRemediation(text: string): string {
+  const rawLines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  if (rawLines.length <= 1) return text;
+  const result = rawLines.map((line) =>
+    /^Fix (all|any) of the following:/i.test(line)
+      ? `    - ${line}`
+      : `        - ${line}`
+  );
+  return '\n' + result.join('\n');
 }
 
 function markdownIssue(issue: Issue): string {
@@ -131,7 +212,7 @@ function markdownIssue(issue: Issue): string {
   }
   lines.push(`- **URL:** ${issue.pageUrl}`);
   lines.push(`- **Reference:** ${issue.docLink}`);
-  lines.push(`- **Fix:** ${issue.remediation}`);
+  lines.push(`- **Fix:** ${formatRemediation(issue.remediation)}`);
   lines.push('');
   return lines.join('\n');
 }
@@ -185,22 +266,34 @@ function buildJson(result: AuditResult, issues: Issue[]): string {
 
 function buildHtml(result: AuditResult, issues: Issue[], title: string): string {
   const { version, level } = result.config.modules.accessibility.wcag;
-  const toolVersion = require('../package.json').version as string;
 
+  const maxPerRule = result.config.maxIssuesPerRule ?? 5;
   const scorecardHtml = htmlScorecard(result);
   const sectionsHtml = PREFIX_ORDER.map((prefix) => {
     const moduleIssues = issues.filter((i) => i.prefix === prefix);
     if (moduleIssues.length === 0) return '';
     const compliance = moduleIssues.filter((i) => !i.isInformational);
     const informational = moduleIssues.filter((i) => i.isInformational);
-    const informationalHtml = informational.length > 0
-      ? `<h3 style="font-size:13px;color:#666;font-weight:600;margin:20px 0 8px;text-transform:uppercase;letter-spacing:0.05em">Informational — does not affect score or exit code</h3>
-      ${informational.map((issue) => htmlIssue(issue, true)).join('\n')}`
-      : '';
+    const { display, hiddenByRule } = applyRuleCap(compliance, maxPerRule);
+    const overflowNotes = hiddenByRule.size > 0 ? (() => {
+      const items = [...hiddenByRule.entries()].map(([rule, count]) => `<li>${count} more <code>${escapeHtml(rule)}</code></li>`).join('');
+      return `<div class="overflow-note"><strong>Violations not shown:</strong><ul>${items}</ul>Set <code>"maxIssuesPerRule": 0</code> in your config to include all in the report.</div>`;
+    })() : '';
+    const informationalHtml = informational.length > 0 ? (() => {
+      const { display: infoDisplay, hiddenByRule: infoHidden } = applyRuleCap(informational, maxPerRule);
+      const infoOverflow = infoHidden.size > 0 ? (() => {
+        const items = [...infoHidden.entries()].map(([rule, count]) => `<li>${count} more <code>${escapeHtml(rule)}</code></li>`).join('');
+        return `<div class="overflow-note"><strong>Violations not shown:</strong><ul>${items}</ul>Set <code>"maxIssuesPerRule": 0</code> in your config to include all in the report.</div>`;
+      })() : '';
+      return `<h3 style="font-size:13px;color:#666;font-weight:600;margin:20px 0 8px;text-transform:uppercase;letter-spacing:0.05em">Informational — does not affect score or exit code</h3>
+      ${infoDisplay.map((issue) => htmlIssue(issue, true)).join('\n')}
+      ${infoOverflow}`;
+    })() : '';
     return `
     <section>
       <h2>${MODULE_LABELS[prefix]}</h2>
-      ${compliance.map((issue) => htmlIssue(issue, false)).join('\n')}
+      ${display.map((issue) => htmlIssue(issue, false)).join('\n')}
+      ${overflowNotes}
       ${informationalHtml}
     </section>`;
   }).join('\n');
@@ -241,6 +334,10 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
   .issue-body dd a { color: #2563eb; text-decoration: none; }
   .issue-body dd a:hover { text-decoration: underline; }
   section { margin-bottom: 8px; }
+  .overflow-note { font-size: 13px; color: #555; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 16px; margin-bottom: 12px; }
+  .overflow-note ul { margin: 6px 0 8px 16px; }
+  .overflow-note li { margin-bottom: 2px; }
+  .overflow-note code { background: #e8edf2; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -249,9 +346,11 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
   <dl class="meta">
     <dt>Target</dt><dd>${result.config.urls.join(', ')}</dd>
     <dt>Run date</dt><dd>${result.runDate.slice(0, 10)}</dd>
-    <dt>Tool version</dt><dd>${toolVersion}</dd>
     <dt>Pages audited</dt><dd>${result.pagesAudited.length}</dd>
     <dt>WCAG</dt><dd>${version} Level ${level}</dd>
+    <dt>Crawl</dt><dd>depth ${result.config.crawl.depth}, max ${result.config.crawl.maxPages === 0 ? 'unlimited' : result.config.crawl.maxPages} pages</dd>
+    <dt>Max issues per rule</dt><dd>${(result.config.maxIssuesPerRule ?? 5) === 0 ? 'unlimited' : (result.config.maxIssuesPerRule ?? 5)}</dd>
+    ${result.config.compareLastRun ? '<dt>Comparing to last run</dt><dd>yes</dd>' : ''}
   </dl>
   <h2>Summary</h2>
   ${scorecardHtml}

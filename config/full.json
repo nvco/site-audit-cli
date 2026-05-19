@@ -29,11 +29,13 @@
     "formats": {
       "markdown": true,
       "html": true,
-      "pdf": true,
+      "pdf": false,
       "json": true
     }
   },
   "compareLastRun": false,
+  "maxIssuesPerRule": 5,
+  "keepRunsForDays": 0,
   "suppress": [],
   "crawl": {
     "depth": 2,

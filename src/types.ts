@@ -61,6 +61,8 @@ export interface Config {
   };
   suppress: SuppressRule[];
   compareLastRun?: boolean;
+  maxIssuesPerRule?: number;
+  keepRunsForDays?: number;
   urls: string[];
 }
 

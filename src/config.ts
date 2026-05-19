@@ -66,6 +66,14 @@ function validate(raw: unknown, filePath: string): Config {
     brokenLinks: normalizeBrokenLinks(rawModules['brokenLinks']),
   };
 
+  if (typeof c['maxIssuesPerRule'] !== 'number') {
+    c['maxIssuesPerRule'] = 5;
+  }
+
+  if (typeof c['keepRunsForDays'] !== 'number') {
+    c['keepRunsForDays'] = 0;
+  }
+
   if (!c['output']) {
     c['output'] = { formats: { markdown: true, html: true, pdf: true, json: true } };
   } else {
@@ -73,7 +81,7 @@ function validate(raw: unknown, filePath: string): Config {
     (c['output'] as Record<string, unknown>)['formats'] = {
       markdown: formats['markdown'] !== false,
       html: formats['html'] !== false,
-      pdf: formats['pdf'] !== false,
+      pdf: formats['pdf'] === true,
       json: formats['json'] !== false,
     };
   }

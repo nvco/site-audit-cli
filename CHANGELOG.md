@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-05-19
+
+### Added
+- `maxIssuesPerRule` config field (default 5) — caps violations shown per rule in markdown and HTML reports; scoring and JSON always use the full count; set to `0` for unlimited
+- `keepRunsForDays` config field (default 0) — auto-deletes report folders older than N days before each run; `0` keeps all runs
+- Overflow note in markdown and HTML reports when rule cap is active — lists truncated rules as a bullet list with a single "set `maxIssuesPerRule: 0` to see all" instruction per section
+
+### Changed
+- Report filenames changed from `report.{ext}` to `{domain-without-tld}-{timestamp}.{ext}` (e.g. `nvco-github-20260519-120212.html`) — files are self-identifying when shared standalone
+- PDF output disabled by default across all config profiles — now opt-in via `"pdf": true` in `output.formats`; HTML is the preferred shareable format
+- Report meta section — removed tool version; added crawl depth/maxPages, `maxIssuesPerRule`, and (when enabled) `compareLastRun`; meta fields now use hard line breaks so they render correctly in markdown
+- Axe-core remediation text in markdown reports now formatted as nested bullets — "Fix all/any of the following:" lines indent as sub-bullets, fix items indent as sub-sub-bullets
+- `src/config.ts` — `pdf` now defaults to `false` when not explicitly set; `maxIssuesPerRule` defaults to 5; `keepRunsForDays` defaults to 0
+- `src/reporter.ts` — `deriveRunFolder` split into `deriveTimestamp` + `deriveBaseName`; `purgeOldRuns` helper added; `applyRuleCap` added for per-rule display truncation; `formatRemediation` added for axe-core nested bullet formatting
+- README — audit modules table updated to include SSL/TLS and full Security Headers check list; output formats section updated to reflect new naming, PDF opt-in status, and format descriptions; description line updated
+- CLAUDE.md — output formats section updated for PDF opt-in and new file naming; `maxIssuesPerRule` and `keepRunsForDays` documented
+
 ## 2026-05-15
 
 ### Changed

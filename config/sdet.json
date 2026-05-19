@@ -29,6 +29,8 @@
     }
   },
   "compareLastRun": false,
+  "maxIssuesPerRule": 5,
+  "keepRunsForDays": 0,
   "suppress": [],
   "crawl": {
     "depth": 2,

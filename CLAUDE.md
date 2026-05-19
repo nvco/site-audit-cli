@@ -43,7 +43,7 @@ There is no test runner command — Playwright is used as a library, not via `pl
 
 **Issue IDs are globally unique per run.** Each module has its own prefix (`ACC`, `PRI`, `COO`, `SEC`, `SSL`, `LNK`) and a sequential counter across all pages.
 
-**Four output formats per run** — markdown, HTML, PDF, JSON — written to `reports/YYYYMMDD-HHmmss/`. All enabled by default; disable individually via `output.formats` in config.
+**Four output formats per run** — markdown, HTML, JSON (default), PDF (opt-in) — written to `reports/YYYYMMDD-HHmmss/` and named `{domain-without-tld}-{timestamp}.{ext}` (e.g. `nvco-github-20260519-120212.html`). Enable/disable individually via `output.formats` in config.
 
 **Suppress list** matches by `rule` + `url` pattern (not by issue ID, since IDs change between runs).
 
@@ -52,6 +52,10 @@ There is no test runner command — Playwright is used as a library, not via `pl
 **Scoring:** each module scores 0–100% based on passing checks / total checks. Letter grade A/B/C/D.
 
 **Regression detection:** `.last-run.json` saved after every run. Set `compareLastRun: true` in config to diff against it and flag new violations.
+
+**Report filtering:** `maxIssuesPerRule` (default 5) caps how many violations of the same rule appear in markdown/HTML reports — scoring and JSON always use the full count. Set to `0` for unlimited.
+
+**Run retention:** `keepRunsForDays` (default 0 = keep all) auto-deletes report folders older than N days before each run.
 
 ## Project Structure
 
