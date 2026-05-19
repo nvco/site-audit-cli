@@ -2,6 +2,12 @@
 
 ## 2026-05-19
 
+### Changed
+- `CLAUDE.md` — removed stale reference to `PLAN.md` as the design spec; `PLAN.md` is now documented as a historical record; `CLAUDE.md` and `README.md` are the authoritative references
+
+### Removed
+- `todo-09-cicd.md`, `todo-10-security.md`, `todo-11-accessibility-cookies.md`, `todo-12-regression.md` — all tasks checked off and moved to `archive/`
+
 ### Added
 - `maxIssuesPerRule` config field (default 5) — caps violations shown per rule in markdown and HTML reports; scoring and JSON always use the full count; set to `0` for unlimited
 - `keepRunsForDays` config field (default 0) — auto-deletes report folders older than N days before each run; `0` keeps all runs

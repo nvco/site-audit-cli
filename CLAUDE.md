@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A CLI web audit tool built in TypeScript using Playwright. It audits websites across six areas (accessibility, privacy, cookies, security headers, SSL/TLS, broken links) and produces markdown, HTML, PDF, and JSON reports per run. Supports local (Node.js) and Docker run modes.
 
-Read `PLAN.md` for the full design spec before making any significant changes.
+This file and `README.md` are the authoritative references for current architecture and configuration. `PLAN.md` is kept as a historical record of the original design and is not kept up to date.
 
 ## Repository
 
