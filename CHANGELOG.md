@@ -3,6 +3,9 @@
 ## 2026-05-19
 
 ### Added
+- `todo-14-improvements.md` — prioritized task list from full codebase review: 4 must-fix bugs, 5 should-fix issues, 5 improvements
+
+### Added
 - Phase 13 Docker support — Dockerfile updated to use Playwright's managed Chromium, docker-compose.yml volumes corrected, `.dockerignore` updated, verified end-to-end with test runs
 - `.env.example` — timezone configuration for Docker; defaults to UTC, override with any IANA timezone
 - `.github/workflows/audit.yml` — manually triggered GitHub Actions workflow with profile selector; push/PR triggers available via commented-out config
