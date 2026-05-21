@@ -2,6 +2,12 @@
 
 ## 2026-05-19
 
+### Fixed
+- Regression tracking bug in `src/regression.ts` — `false || undefined` now correctly uses ternary to set `isNew: true | undefined`
+- `keepRunsForDays` and `maxIssuesPerRule` in `src/config.ts` — negative values now reset to defaults (`0` and `5` respectively)
+- `escapeHtml` in `src/reporter.ts` — now escapes `"` and `'` to prevent broken HTML attributes
+- GitHub Actions workflow — added `npm run build` step so `dist/` is always fresh before the audit runs
+
 ### Added
 - `todo-14-improvements.md` — prioritized task list from full codebase review: 4 must-fix bugs, 5 should-fix issues, 5 improvements
 

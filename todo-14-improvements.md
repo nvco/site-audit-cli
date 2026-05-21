@@ -2,21 +2,21 @@
 
 ## Must Fix
 
-- [ ] **GitHub Actions: add `npm run build` step** — `dist/` may be stale; workflow runs old code
+- [x] **GitHub Actions: add `npm run build` step** — `dist/` may be stale; workflow runs old code
   - Add `- run: npm run build` before `node dist/index.js` in `.github/workflows/audit.yml`
 
-- [ ] **Regression tracking bug** `src/regression.ts:40` — `false || undefined` evaluates to `undefined`, breaking `isNew` flag
+- [x] **Regression tracking bug** `src/regression.ts:40` — `false || undefined` evaluates to `undefined`, breaking `isNew` flag
   - Change `!known.has(fingerprint(issue)) || undefined` to `!known.has(fingerprint(issue)) ? true : undefined`
 
-- [ ] **`keepRunsForDays` accepts negative values** `src/config.ts` — value of `-1` deletes all reports
+- [x] **`keepRunsForDays` accepts negative values** `src/config.ts` — value of `-1` deletes all reports
   - Validate value is `>= 0`; reset to `0` if invalid
 
-- [ ] **`maxIssuesPerRule` accepts negative values** `src/config.ts` — value of `-1` shows no issues
+- [x] **`maxIssuesPerRule` accepts negative values** `src/config.ts` — value of `-1` shows no issues
   - Validate value is `>= 0`; reset to `5` if invalid
 
 ## Should Fix
 
-- [ ] **`escapeHtml` doesn't escape quotes** `src/reporter.ts` — issue descriptions containing `"` could break HTML attributes
+- [x] **`escapeHtml` doesn't escape quotes** `src/reporter.ts` — issue descriptions containing `"` could break HTML attributes
   - Add `.replace(/"/g, '&quot;')` and `.replace(/'/g, '&#39;')`
 
 - [ ] **Folder date parsing doesn't guard against `NaN`** `src/reporter.ts:94` — silent failure in purge logic if date is invalid

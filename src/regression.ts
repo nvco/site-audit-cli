@@ -37,6 +37,6 @@ export function markNewIssues(issues: Issue[], lastRun: LastRunData): Issue[] {
   const known = new Set(lastRun.fingerprints);
   return issues.map((issue) => ({
     ...issue,
-    isNew: !known.has(fingerprint(issue)) || undefined,
+    isNew: !known.has(fingerprint(issue)) ? true : undefined,
   }));
 }

@@ -66,11 +66,11 @@ function validate(raw: unknown, filePath: string): Config {
     brokenLinks: normalizeBrokenLinks(rawModules['brokenLinks']),
   };
 
-  if (typeof c['maxIssuesPerRule'] !== 'number') {
+  if (typeof c['maxIssuesPerRule'] !== 'number' || (c['maxIssuesPerRule'] as number) < 0) {
     c['maxIssuesPerRule'] = 5;
   }
 
-  if (typeof c['keepRunsForDays'] !== 'number') {
+  if (typeof c['keepRunsForDays'] !== 'number' || (c['keepRunsForDays'] as number) < 0) {
     c['keepRunsForDays'] = 0;
   }
 
