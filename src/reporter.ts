@@ -51,33 +51,35 @@ export async function generateReports(result: AuditResult, outputBase: string): 
   fs.mkdirSync(runDir, { recursive: true });
 
   const baseName = deriveBaseName(result, timestamp);
-  const formats = result.config.output?.formats ?? { markdown: true, html: true, pdf: true, json: true };
+  const formats = result.config.output.formats;
   const issues = result.issues;
   const title = reportTitle(result);
 
-  if (formats.markdown) {
+  if (formats.markdown.enabled) {
     const p = path.join(runDir, `${baseName}.md`);
     fs.writeFileSync(p, buildMarkdown(result, issues, title));
     console.log(`  Markdown: ${p}`);
   }
 
-  if (formats.json) {
+  if (formats.json.enabled) {
     const p = path.join(runDir, `${baseName}.json`);
-    fs.writeFileSync(p, buildJson(result, issues));
+    fs.writeFileSync(p, buildJson(result, issues, formats.json.showPagesAudited));
     console.log(`  JSON:     ${p}`);
   }
 
   const htmlPath = path.join(runDir, `${baseName}.html`);
-  if (formats.html || formats.pdf) {
-    fs.writeFileSync(htmlPath, buildHtml(result, issues, title));
-    if (formats.html) console.log(`  HTML:     ${htmlPath}`);
+  if (formats.html.enabled || formats.pdf.enabled) {
+    // When both are enabled, HTML file is shared — use html's setting; pdf-only uses pdf's setting
+    const showPages = formats.html.enabled ? formats.html.showPagesAudited : formats.pdf.showPagesAudited;
+    fs.writeFileSync(htmlPath, buildHtml(result, issues, title, showPages));
+    if (formats.html.enabled) console.log(`  HTML:     ${htmlPath}`);
   }
 
-  if (formats.pdf) {
+  if (formats.pdf.enabled) {
     const pdfPath = path.join(runDir, `${baseName}.pdf`);
     await generatePdf(htmlPath, pdfPath);
     console.log(`  PDF:      ${pdfPath}`);
-    if (!formats.html) fs.unlinkSync(htmlPath);
+    if (!formats.html.enabled) fs.unlinkSync(htmlPath);
   }
 
   return { runDir };
@@ -198,6 +200,12 @@ function buildMarkdown(result: AuditResult, issues: Issue[], title: string): str
     }
   }
 
+  if (result.config.output.formats.markdown.showPagesAudited) {
+    lines.push(`## Pages Audited\n`);
+    lines.push(result.pagesAudited.map((u) => `- ${u}`).join('\n'));
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
 
@@ -278,13 +286,13 @@ function markdownScorecard(result: AuditResult): string {
 
 // --- JSON ---
 
-function buildJson(result: AuditResult, issues: Issue[]): string {
-  const output = {
+function buildJson(result: AuditResult, issues: Issue[], showPagesAudited: boolean): string {
+  const output: Record<string, unknown> = {
     url: result.config.urls[0],
     date: result.runDate.slice(0, 10),
     durationMs: result.runDurationMs,
     toolVersion,
-    pagesAudited: result.pagesAudited,
+    ...(showPagesAudited ? { pagesAudited: result.pagesAudited } : {}),
     overall: result.overallScore,
     modules: Object.fromEntries(
       PREFIX_ORDER.map((prefix) => {
@@ -305,7 +313,7 @@ function buildJson(result: AuditResult, issues: Issue[]): string {
 
 // --- HTML ---
 
-function buildHtml(result: AuditResult, issues: Issue[], title: string): string {
+function buildHtml(result: AuditResult, issues: Issue[], title: string, showPagesAudited: boolean): string {
   const { version, level } = result.config.modules.accessibility.wcag;
 
   const maxPerRule = result.config.maxIssuesPerRule ?? 5;
@@ -396,6 +404,12 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string): string 
   <h2>Summary</h2>
   ${scorecardHtml}
   ${sectionsHtml}
+  ${showPagesAudited ? `<section>
+    <h2>Pages Audited</h2>
+    <ul style="margin:0;padding-left:20px;font-size:14px;line-height:2">
+      ${result.pagesAudited.map((u) => `<li><a href="${escapeHtml(u)}" target="_blank" rel="noopener">${escapeHtml(u)}</a></li>`).join('\n      ')}
+    </ul>
+  </section>` : ''}
 </div>
 </body>
 </html>`;

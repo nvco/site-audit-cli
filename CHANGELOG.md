@@ -10,6 +10,13 @@
 ### Changed
 - `src/types.ts` — `standard` field on `AccessibilityModuleConfig` changed from optional (`standard?`) to required, matching what `normalizeAccessibility()` always produces
 
+### Added
+- `showPagesAudited` setting per output format — controls whether the audited URL list appears in each report type; applies to markdown, HTML, PDF, and JSON; defaults to `true` for all except PDF which defaults to `false`
+  - `src/types.ts` — new `FormatConfig { enabled, showPagesAudited }` interface; all four formats now use it
+  - `src/config.ts` — `normalizeFormat()` helper normalizes both legacy boolean shorthand and new object shape
+  - `src/reporter.ts` — `buildMarkdown`, `buildHtml`, and `buildJson` each gate the pages list behind their format's flag; HTML/PDF share a render when both enabled, using HTML's setting
+  - All three config profiles updated to explicit object format
+
 ## 2026-05-19
 
 ### Changed

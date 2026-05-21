@@ -27,15 +27,15 @@
   },
   "output": {
     "formats": {
-      "markdown": true,
-      "html": true,
-      "pdf": false,
-      "json": true
+      "markdown": { "enabled": true, "showPagesAudited": true },
+      "html":     { "enabled": true, "showPagesAudited": true },
+      "pdf":      { "enabled": false, "showPagesAudited": false },
+      "json":     { "enabled": true, "showPagesAudited": true }
     }
   },
   "compareLastRun": false,
   "maxIssuesPerRule": 5,
-  "keepRunsForDays": 0,
+  "keepRunsForDays": 1,
   "suppress": [],
   "crawl": {
     "depth": 2,

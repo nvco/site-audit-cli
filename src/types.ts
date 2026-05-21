@@ -20,11 +20,16 @@ export interface SuppressRule {
   url: string;
 }
 
+export interface FormatConfig {
+  enabled: boolean;
+  showPagesAudited: boolean;
+}
+
 export interface OutputFormats {
-  markdown: boolean;
-  html: boolean;
-  pdf: boolean;
-  json: boolean;
+  markdown: FormatConfig;
+  html: FormatConfig;
+  pdf: FormatConfig;
+  json: FormatConfig;
 }
 
 export interface BaseModuleConfig {

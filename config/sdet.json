@@ -22,10 +22,10 @@
   },
   "output": {
     "formats": {
-      "markdown": true,
-      "html": false,
-      "pdf": false,
-      "json": true
+      "markdown": { "enabled": true, "showPagesAudited": true },
+      "html":     { "enabled": false, "showPagesAudited": true },
+      "pdf":      { "enabled": false, "showPagesAudited": false },
+      "json":     { "enabled": true, "showPagesAudited": true }
     }
   },
   "compareLastRun": false,

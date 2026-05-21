@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config, AccessibilityModuleConfig, BrokenLinksModuleConfig, PrivacyModuleConfig, BaseModuleConfig } from './types';
+import { Config, AccessibilityModuleConfig, BrokenLinksModuleConfig, PrivacyModuleConfig, BaseModuleConfig, FormatConfig } from './types';
 
 export function loadConfig(configPath = 'config/full.json'): Config {
   const fullPath = path.resolve(configPath);
@@ -39,6 +39,15 @@ function normalizePrivacy(val: unknown): PrivacyModuleConfig {
   const enabled = base['enabled'] !== false;
   const ccpa = base['ccpa'] === true;
   return { enabled, ccpa };
+}
+
+function normalizeFormat(val: unknown, defaultEnabled: boolean): FormatConfig {
+  if (typeof val === 'boolean') return { enabled: val, showPagesAudited: true };
+  const obj = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
+  return {
+    enabled: obj['enabled'] !== undefined ? obj['enabled'] !== false : defaultEnabled,
+    showPagesAudited: obj['showPagesAudited'] !== false,
+  };
 }
 
 function normalizeBrokenLinks(val: unknown): BrokenLinksModuleConfig {
@@ -81,17 +90,15 @@ function validate(raw: unknown, filePath: string): Config {
     c['keepRunsForDays'] = 0;
   }
 
-  if (!c['output']) {
-    c['output'] = { formats: { markdown: true, html: true, pdf: true, json: true } };
-  } else {
-    const formats = (c['output'] as Record<string, unknown>)['formats'] as Record<string, unknown> ?? {};
-    (c['output'] as Record<string, unknown>)['formats'] = {
-      markdown: formats['markdown'] !== false,
-      html: formats['html'] !== false,
-      pdf: formats['pdf'] === true,
-      json: formats['json'] !== false,
-    };
-  }
+  const out = (c['output'] ?? {}) as Record<string, unknown>;
+  const rawFormats = (out['formats'] ?? {}) as Record<string, unknown>;
+  out['formats'] = {
+    markdown: normalizeFormat(rawFormats['markdown'], true),
+    html:     normalizeFormat(rawFormats['html'], true),
+    pdf:      normalizeFormat(rawFormats['pdf'], false),
+    json:     normalizeFormat(rawFormats['json'], true),
+  };
+  c['output'] = out;
 
   return c as unknown as Config;
 }
