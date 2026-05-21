@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-21
+
+### Fixed
+- JSON report module key for SSL/TLS — `replace(' ', '_')` replaced with `replace(/[\s/]+/g, '_')` so the key is now `"ssl_tls"` instead of the invalid `"ssl/tls"`
+- `isInformational` assignment in `src/auditors/accessibility.ts` — changed from `isInformational || undefined` to `isInformational ? true : undefined` for clarity
+- `isNew` assignment in `src/regression.ts` — reordered ternary to `known.has(...) ? undefined : true` (positive condition first)
+
+### Changed
+- `src/types.ts` — `standard` field on `AccessibilityModuleConfig` changed from optional (`standard?`) to required, matching what `normalizeAccessibility()` always produces
+
 ## 2026-05-19
 
 ### Changed

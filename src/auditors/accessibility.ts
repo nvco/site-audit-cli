@@ -133,7 +133,7 @@ export async function runAccessibilityAudit(page: Page, config: Config): Promise
         remediation: node.failureSummary ?? v.description,
         rule: v.id,
         pageUrl: page.url(),
-        isInformational: isInformational || undefined,
+        isInformational: isInformational ? true : undefined,
       });
     }
   }

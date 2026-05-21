@@ -36,7 +36,7 @@ export interface AccessibilityModuleConfig extends BaseModuleConfig {
     version: '2.0' | '2.1' | '2.2';
     level: 'A' | 'AA' | 'AAA';
   };
-  standard?: 'wcag' | 'en301549';
+  standard: 'wcag' | 'en301549';
 }
 
 export interface PrivacyModuleConfig extends BaseModuleConfig {

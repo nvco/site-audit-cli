@@ -290,7 +290,7 @@ function buildJson(result: AuditResult, issues: Issue[]): string {
       PREFIX_ORDER.map((prefix) => {
         const ms = result.moduleScores[prefix];
         return [
-          MODULE_LABELS[prefix].toLowerCase().replace(' ', '_'),
+          MODULE_LABELS[prefix].toLowerCase().replace(/[\s/]+/g, '_'),
           {
             score: ms?.score ?? null,
             grade: ms?.grade ?? null,
