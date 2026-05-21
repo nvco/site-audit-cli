@@ -92,6 +92,7 @@ function purgeOldRuns(outputBase: string, keepDays: number): void {
     if (!match) continue;
     const [, yr, mo, dy, hr, mn, sc] = match;
     const folderDate = new Date(`${yr}-${mo}-${dy}T${hr}:${mn}:${sc}`).getTime();
+    if (isNaN(folderDate)) continue;
     if (folderDate < cutoff) {
       fs.rmSync(path.join(outputBase, entry), { recursive: true, force: true });
     }

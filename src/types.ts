@@ -39,6 +39,10 @@ export interface AccessibilityModuleConfig extends BaseModuleConfig {
   standard?: 'wcag' | 'en301549';
 }
 
+export interface PrivacyModuleConfig extends BaseModuleConfig {
+  ccpa?: boolean;
+}
+
 export interface BrokenLinksModuleConfig extends BaseModuleConfig {
   includeExternal: boolean;
 }
@@ -46,7 +50,7 @@ export interface BrokenLinksModuleConfig extends BaseModuleConfig {
 export interface Config {
   modules: {
     accessibility: AccessibilityModuleConfig;
-    privacy: BaseModuleConfig;
+    privacy: PrivacyModuleConfig;
     cookies: BaseModuleConfig;
     securityHeaders: BaseModuleConfig;
     ssl: BaseModuleConfig;

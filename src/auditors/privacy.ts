@@ -8,7 +8,7 @@ const CONSENT_SELECTORS = [
   '[id*="banner"]', '[class*="banner"]',
 ];
 
-export async function runPrivacyAudit(page: Page, _config: Config): Promise<AuditModuleResult> {
+export async function runPrivacyAudit(page: Page, config: Config): Promise<AuditModuleResult> {
   const issues: Issue[] = [];
   const pageUrl = page.url();
   const origin = new URL(pageUrl).origin;
@@ -51,21 +51,23 @@ export async function runPrivacyAudit(page: Page, _config: Config): Promise<Audi
     });
   }
 
-  // CCPA "Do Not Sell" link
-  const hasDoNotSell = await page.locator('a').evaluateAll((els) =>
-    els.some((el) => /do not sell/i.test(el.textContent ?? ''))
-  );
-  if (!hasDoNotSell) {
-    issues.push({
-      prefix: 'PRI',
-      impact: 'moderate',
-      description: 'No "Do Not Sell or Share My Personal Information" link detected',
-      location: pageUrl,
-      docLink: 'https://oag.ca.gov/privacy/ccpa',
-      remediation: 'If your site targets California residents, add a "Do Not Sell or Share My Personal Information" link as required by CCPA.',
-      rule: 'ccpa-do-not-sell-link',
-      pageUrl,
-    });
+  // CCPA "Do Not Sell" link (opt-in via config.modules.privacy.ccpa)
+  if (config.modules.privacy.ccpa) {
+    const hasDoNotSell = await page.locator('a').evaluateAll((els) =>
+      els.some((el) => /do not sell/i.test(el.textContent ?? ''))
+    );
+    if (!hasDoNotSell) {
+      issues.push({
+        prefix: 'PRI',
+        impact: 'moderate',
+        description: 'No "Do Not Sell or Share My Personal Information" link detected',
+        location: pageUrl,
+        docLink: 'https://oag.ca.gov/privacy/ccpa',
+        remediation: 'Add a "Do Not Sell or Share My Personal Information" link as required by CCPA.',
+        rule: 'ccpa-do-not-sell-link',
+        pageUrl,
+      });
+    }
   }
 
   // GPC declaration
@@ -88,5 +90,5 @@ export async function runPrivacyAudit(page: Page, _config: Config): Promise<Audi
     // network error — skip silently
   }
 
-  return { issues, totalChecks: 4 };
+  return { issues, totalChecks: config.modules.privacy.ccpa ? 4 : 3 };
 }

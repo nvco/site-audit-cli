@@ -116,7 +116,8 @@ copy .env.example .env # Windows
       } 
     },
     "privacy": { 
-      "enabled": true 
+      "enabled": true,
+      "ccpa": false      // true to check for a "Do Not Sell" link (CCPA requirement)
     },
     "cookies": { 
       "enabled": true 

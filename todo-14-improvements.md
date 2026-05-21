@@ -19,17 +19,15 @@
 - [x] **`escapeHtml` doesn't escape quotes** `src/reporter.ts` — issue descriptions containing `"` could break HTML attributes
   - Add `.replace(/"/g, '&quot;')` and `.replace(/'/g, '&#39;')`
 
-- [ ] **Folder date parsing doesn't guard against `NaN`** `src/reporter.ts:94` — silent failure in purge logic if date is invalid
+- [x] **Folder date parsing doesn't guard against `NaN`** `src/reporter.ts:94` — silent failure in purge logic if date is invalid
   - Add `if (isNaN(folderDate)) continue;` after parsing
 
-- [ ] **Broken links total check count calculated before dedup** `src/auditors/broken-links.ts` — slightly inaccurate module scores
-  - Move `totalChecks` assignment to after deduplication
+- [x] **Broken links total check count calculated before dedup** `src/auditors/broken-links.ts` — reviewed, dedup happens via Set before totalChecks is read; no fix needed
 
-- [ ] **Mixed content check has false positives** `src/auditors/security-headers.ts` — relative URLs and data URIs incorrectly flagged
-  - Filter to only flag URLs that explicitly start with `http:`
+- [x] **Mixed content check has false positives** `src/auditors/security-headers.ts` — reviewed, filter already uses `v.startsWith('http:')` so relative URLs and data URIs are not flagged; no fix needed
 
-- [ ] **CCPA check flags all non-US sites** `src/auditors/privacy.ts` — false positive for non-California businesses
-  - Make CCPA check opt-in via config, or gate behind a `ccpa: true` flag
+- [x] **CCPA check flags all non-US sites** `src/auditors/privacy.ts` — false positive for non-California businesses
+  - Made CCPA check opt-in via `"ccpa": true` in the privacy module config
 
 ## Could Improve
 

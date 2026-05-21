@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Config, AccessibilityModuleConfig, BrokenLinksModuleConfig, BaseModuleConfig } from './types';
+import { Config, AccessibilityModuleConfig, BrokenLinksModuleConfig, PrivacyModuleConfig, BaseModuleConfig } from './types';
 
 export function loadConfig(configPath = 'config/full.json'): Config {
   const fullPath = path.resolve(configPath);
@@ -34,6 +34,13 @@ function normalizeAccessibility(val: unknown): AccessibilityModuleConfig {
   return { enabled, wcag: { version, level }, standard };
 }
 
+function normalizePrivacy(val: unknown): PrivacyModuleConfig {
+  const base = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
+  const enabled = base['enabled'] !== false;
+  const ccpa = base['ccpa'] === true;
+  return { enabled, ccpa };
+}
+
 function normalizeBrokenLinks(val: unknown): BrokenLinksModuleConfig {
   const base = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
   const enabled = base['enabled'] !== false;
@@ -59,7 +66,7 @@ function validate(raw: unknown, filePath: string): Config {
   const rawModules = (c['modules'] as Record<string, unknown>) ?? {};
   c['modules'] = {
     accessibility: normalizeAccessibility(rawModules['accessibility']),
-    privacy: normalizeBase(rawModules['privacy']),
+    privacy: normalizePrivacy(rawModules['privacy']),
     cookies: normalizeBase(rawModules['cookies']),
     securityHeaders: normalizeBase(rawModules['securityHeaders']),
     ssl: normalizeBase(rawModules['ssl']),

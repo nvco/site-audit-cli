@@ -2,6 +2,18 @@
 
 ## 2026-05-19
 
+### Added
+- `ccpa` opt-in flag for the privacy module — set `"ccpa": true` in config to enable the "Do Not Sell" link check; previously fired for all sites regardless of jurisdiction
+
+### Fixed
+- Folder date `NaN` guard in `src/reporter.ts` — invalid dates in purge logic are now skipped instead of silently deleting nothing or everything
+- CCPA false positive — check is now gated behind `config.modules.privacy.ccpa` so non-US sites are not penalised
+
+### Changed
+- `src/types.ts` — added `PrivacyModuleConfig` with optional `ccpa` field; `Config.modules.privacy` now uses it
+- `src/config.ts` — added `normalizePrivacy()` to handle `ccpa` field
+- README — configuration reference updated with `ccpa` field documentation
+
 ### Fixed
 - Regression tracking bug in `src/regression.ts` — `false || undefined` now correctly uses ternary to set `isNew: true | undefined`
 - `keepRunsForDays` and `maxIssuesPerRule` in `src/config.ts` — negative values now reset to defaults (`0` and `5` respectively)
