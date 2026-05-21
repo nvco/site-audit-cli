@@ -90,6 +90,8 @@ function validate(raw: unknown, filePath: string): Config {
     c['keepRunsForDays'] = 0;
   }
 
+  if (c['showToolCredit'] !== true) c['showToolCredit'] = false;
+
   const out = (c['output'] ?? {}) as Record<string, unknown>;
   const rawFormats = (out['formats'] ?? {}) as Record<string, unknown>;
   out['formats'] = {

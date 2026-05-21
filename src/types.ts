@@ -72,6 +72,7 @@ export interface Config {
   compareLastRun?: boolean;
   maxIssuesPerRule?: number;
   keepRunsForDays?: number;
+  showToolCredit?: boolean;
   urls: string[];
 }
 

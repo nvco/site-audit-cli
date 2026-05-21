@@ -16,4 +16,4 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-CMD ["node", "dist/index.js"]
+ENTRYPOINT ["node", "dist/index.js"]

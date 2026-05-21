@@ -33,6 +33,7 @@
       "json":     { "enabled": true, "showPagesAudited": true }
     }
   },
+  "showToolCredit": true,
   "compareLastRun": false,
   "maxIssuesPerRule": 5,
   "keepRunsForDays": 1,
