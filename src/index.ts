@@ -1,5 +1,6 @@
 import { loadConfig } from './config';
 import { loadLastRun, saveLastRun, markNewIssues } from './regression';
+import { version as toolVersion } from '../package.json';
 
 const args = process.argv.slice(2);
 
@@ -7,8 +8,6 @@ async function main() {
   const configPath = args[0];
   const config = loadConfig(configPath);
   const mode = config.urls.length === 1 ? 'crawl' : 'list';
-  const toolVersion = require('../package.json').version;
-
   console.log(`site-audit-cli v${toolVersion}`);
   const { wcag } = config.modules.accessibility;
   console.log(`Mode: ${mode} | URLs: ${config.urls.length} | WCAG ${wcag.version} Level ${wcag.level}`);

@@ -31,17 +31,15 @@
 
 ## Could Improve
 
-- [ ] **`require('../package.json')` called at runtime in two places** `src/index.ts` and `src/reporter.ts` — inefficient
-  - Read once at startup and pass version through or use a shared constant
+- [x] **`require('../package.json')` called at runtime in two places** `src/index.ts` and `src/reporter.ts` — inefficient
+  - Replaced with `import { version as toolVersion } from '../package.json'` in both files
 
-- [ ] **Logging prefix inconsistency** — `[crawler]`, `[runner]` prefixes used inconsistently; privacy auditor has none
-  - Standardize to `[module-name]` format across all auditors and core files
+- [x] **Logging prefix inconsistency** — reviewed, only crawler.ts and runner.ts have logging and both use `[module]` prefix consistently; auditors use silent catches by design; no fix needed
 
-- [ ] **Crawler doesn't normalize query string param order** `src/crawler.ts` — `?a=1&b=2` and `?b=2&a=1` treated as different URLs, causing duplicate page audits
+- [x] **Crawler doesn't normalize query string param order** `src/crawler.ts` — `?a=1&b=2` and `?b=2&a=1` treated as different URLs, causing duplicate page audits
   - Add `parsed.searchParams.sort()` in `normalise()`
 
-- [ ] **No explicit page load timeout in crawler** `src/crawler.ts:50` — slow pages can hang the entire audit
+- [x] **No explicit page load timeout in crawler** `src/crawler.ts:50` — slow pages can hang the entire audit
   - Add `timeout: 30000` to `page.goto()` options
 
-- [ ] **PDF generation opens a second Chromium instance** `src/reporter.ts` — wasteful, browser already running during audit
-  - Reuse existing browser context or generate PDF from the already-open page
+- [x] **PDF generation opens a second Chromium instance** `src/reporter.ts` — audit browser is already closed by the time PDF runs, so reuse isn't possible; instead moved chromium import inside generatePdf() so it's only loaded when PDF is actually enabled

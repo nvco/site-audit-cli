@@ -76,7 +76,7 @@ node dist/index.js config/full.json
 | Module | Prefix | What it checks |
 |---|---|---|
 | Accessibility | `ACC` | WCAG violations via axe-core (configurable version + level) |
-| Privacy | `PRI` | Cookie consent banner, privacy policy, CCPA "Do Not Sell" link, GPC declaration |
+| Privacy | `PRI` | Cookie consent banner, privacy policy, GPC declaration; CCPA "Do Not Sell" link (opt-in via `ccpa: true`) |
 | Cookies | `COO` | Secure flag, HttpOnly flag, SameSite attribute, third-party cookies, expiry |
 | Security Headers | `SEC` | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, mixed content |
 | SSL/TLS | `SSL` | Certificate expiry, TLS version, HTTPS redirect |

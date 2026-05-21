@@ -2,6 +2,13 @@
 
 ## 2026-05-19
 
+### Changed
+- `src/crawler.ts` — query string params now sorted in `normalise()` to prevent duplicate page audits; explicit 30s page load timeout added
+- `src/index.ts` and `src/reporter.ts` — replaced runtime `require('../package.json')` with static `import { version }` 
+- `src/reporter.ts` — `chromium` import moved inside `generatePdf()` so it's only loaded when PDF is enabled
+- README and CLAUDE.md — privacy module docs updated to reflect CCPA as opt-in; audit modules table updated
+- `archive/todo-14-improvements.md` — all Phase 14 tasks complete, todo archived
+
 ### Added
 - `ccpa` opt-in flag for the privacy module — set `"ccpa": true` in config to enable the "Do Not Sell" link check; previously fired for all sites regardless of jurisdiction
 

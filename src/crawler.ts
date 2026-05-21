@@ -47,7 +47,7 @@ async function crawl(seed: string, maxDepth: number, maxPages: number, page: Pag
 
 async function extractLinks(url: string, origin: string, page: Page): Promise<string[]> {
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     const hrefs = await page.$$eval('a[href]', (els) =>
       els.map((el) => (el as { href: string }).href)
     );
@@ -74,6 +74,7 @@ function normalise(url: string): string {
   parsed.hash = '';
   parsed.hostname = parsed.hostname.toLowerCase();
   parsed.protocol = parsed.protocol.toLowerCase();
+  parsed.searchParams.sort();
   let href = parsed.href;
   if (href.endsWith('/') && parsed.pathname !== '/') {
     href = href.slice(0, -1);

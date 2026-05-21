@@ -73,7 +73,7 @@ src/
 ├── types.ts              # Shared types (Issue, Config, AuditResult, etc.)
 └── auditors/
     ├── accessibility.ts  # axe-core via Playwright; EN 301 549 mode support
-    ├── privacy.ts        # Consent banner, privacy policy, CCPA link, GPC check
+    ├── privacy.ts        # Consent banner, privacy policy, GPC check; CCPA opt-in via config
     ├── cookies.ts        # Secure, HttpOnly, SameSite, third-party, expiry checks
     ├── security-headers.ts  # CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, mixed content
     ├── ssl.ts            # Cert expiry, TLS version, HTTPS redirect (Node tls/http, not Playwright)

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { chromium } from 'playwright';
 import { AuditResult, Issue, IssuePrefix, ImpactLevel, ModuleScore } from './types';
+import { version as toolVersion } from '../package.json';
 
 function formatDuration(ms: number): string {
   const totalSeconds = Math.round(ms / 1000);
@@ -279,7 +279,6 @@ function markdownScorecard(result: AuditResult): string {
 // --- JSON ---
 
 function buildJson(result: AuditResult, issues: Issue[]): string {
-  const toolVersion = require('../package.json').version as string;
   const output = {
     url: result.config.urls[0],
     date: result.runDate.slice(0, 10),
@@ -482,6 +481,7 @@ function escapeHtml(str: string): string {
 // --- PDF ---
 
 async function generatePdf(htmlPath: string, pdfPath: string): Promise<void> {
+  const { chromium } = await import('playwright');
   const browser = await chromium.launch();
   const page = await browser.newPage();
   await page.goto(`file://${path.resolve(htmlPath)}`);
