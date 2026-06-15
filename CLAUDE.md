@@ -20,6 +20,7 @@ npm install && npx playwright install chromium
 node dist/index.js                      # full audit (defaults to config/full.json)
 node dist/index.js config/sdet.json
 node dist/index.js config/compliance.json
+node dist/index.js --pdf <path>.html    # generate PDF from existing HTML report, no re-scan
 
 # Docker
 docker compose up

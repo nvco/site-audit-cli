@@ -37,6 +37,9 @@ node dist/index.js config/full.json
 
 # Or just run with no argument — defaults to config/full.json
 node dist/index.js
+
+# Generate a PDF from an existing HTML report without re-running the audit
+node dist/index.js --pdf reports/20260521-120540/report.html
 ```
 
 Reports are written to `reports/YYYYMMDD-HHmmss/` and named `{domain}-{timestamp}.{ext}` (e.g. `nvco-github-20260519-120212.html`).

@@ -1,10 +1,29 @@
 import { loadConfig } from './config';
 import { loadLastRun, saveLastRun, markNewIssues } from './regression';
 import { version as toolVersion } from '../package.json';
+import * as fs from 'fs';
+import * as path from 'path';
 
 const args = process.argv.slice(2);
 
+async function renderPdf(htmlPath: string): Promise<void> {
+  const resolved = path.resolve(htmlPath);
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`HTML file not found: ${resolved}`);
+  }
+  const pdfPath = resolved.replace(/\.html$/, '.pdf');
+  const { generatePdf } = await import('./reporter');
+  await generatePdf(resolved, pdfPath);
+  console.log(`PDF:  ${pdfPath}`);
+}
+
 async function main() {
+  if (args[0] === '--pdf') {
+    if (!args[1]) throw new Error('Usage: node dist/index.js --pdf <path-to-report.html>');
+    await renderPdf(args[1]);
+    return;
+  }
+
   const configPath = args[0];
   const config = loadConfig(configPath);
   const mode = config.urls.length === 1 ? 'crawl' : 'list';

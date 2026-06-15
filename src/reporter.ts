@@ -373,6 +373,9 @@ function buildHtml(result: AuditResult, issues: Issue[], title: string, showPage
   @media print {
     body { background: #fff; }
     .page { padding: 0; max-width: 100%; }
+    section { break-before: page; }
+    section:first-of-type { break-before: auto; }
+    h2 { break-after: avoid; }
   }
   .issue-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
   .issue-id { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; font-weight: 700; color: #444; }
@@ -496,7 +499,7 @@ function escapeHtml(str: string): string {
 
 // --- PDF ---
 
-async function generatePdf(htmlPath: string, pdfPath: string): Promise<void> {
+export async function generatePdf(htmlPath: string, pdfPath: string): Promise<void> {
   const { chromium } = await import('playwright');
   const browser = await chromium.launch();
   const page = await browser.newPage();
