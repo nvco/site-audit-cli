@@ -51,6 +51,7 @@ export interface PrivacyModuleConfig extends BaseModuleConfig {
 
 export interface BrokenLinksModuleConfig extends BaseModuleConfig {
   includeExternal: boolean;
+  ignoredStatusCodes: number[];
 }
 
 export interface Config {

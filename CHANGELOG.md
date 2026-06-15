@@ -7,6 +7,21 @@
   - `src/auditors/privacy.ts` — replaced sequential loop with `Promise.any` race across all consent selectors
   - New `consentBannerTimeout` field in privacy module config (default 5000ms) controls how long to wait; added to `full.json` and `compliance.json`
 
+- Privacy policy link detection broadened — now matches any link containing "privacy" (was limited to "privacy policy" / "privacy notice"), catching "Privacy Practices", "Notice of Privacy Practices", "Your Privacy Choices", etc.
+
+- Broken links auditor no longer flags auth-required pages as broken
+  - 401 and 403 responses are excluded by default (`ignoredStatusCodes: [401, 403]`)
+  - Configurable via `ignoredStatusCodes` in the `brokenLinks` module config
+  - Added to all three config profiles
+
+- Malformed `href` attributes (e.g. `[object Object]` from JS framework bugs) now reported as a `LNK` `invalid-href` issue instead of silently producing garbage URLs
+  - `src/auditors/broken-links.ts` — reads raw `getAttribute('href')` alongside resolved href; flags `[object Object]`-style values explicitly
+
+- Crawler no longer follows garbage URLs produced by JS framework bugs
+  - `src/crawler.ts` — filters `[object Object]` hrefs by checking resolved pathname after decoding
+  - Switched crawler page load to `networkidle` so JS-rendered navigation links are discovered on SPAs
+  - Fixed same-origin check to use the post-redirect URL's origin, so sites that redirect (e.g. `example.com` → `www.example.com`) are crawled correctly instead of returning only 1 page
+
 ### Added
 - `config/*.local.json` pattern added to `.gitignore` — use this naming convention for personal or temporary configs that should not be committed (e.g. `config/full.local.json`)
 - README updated to document the `.local.json` convention

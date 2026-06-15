@@ -47,16 +47,26 @@ async function crawl(seed: string, maxDepth: number, maxPages: number, page: Pag
 
 async function extractLinks(url: string, origin: string, page: Page): Promise<string[]> {
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+    // Use the post-redirect URL's origin so redirects (e.g. example.com → www.example.com) don't drop all links
+    const effectiveOrigin = new URL(page.url()).origin;
     const hrefs = await page.$$eval('a[href]', (els) =>
-      els.map((el) => (el as { href: string }).href)
+      els.map((el) => ({
+        resolved: (el as unknown as { href: string }).href,
+        raw: el.getAttribute('href') ?? '',
+      }))
     );
 
     const links = new Set<string>();
-    for (const href of hrefs) {
+    for (const { resolved, raw } of hrefs) {
+      // skip non-navigable hrefs (javascript:, mailto:, etc.)
+      if (!raw || /^(javascript|mailto|tel|data):/i.test(raw)) continue;
       try {
-        const parsed = new URL(href, url);
-        if (parsed.origin !== origin) continue;
+        const parsed = new URL(resolved, url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) continue;
+        if (parsed.origin !== effectiveOrigin) continue;
+        // skip URLs with garbage path segments from JS framework bugs (e.g. [object Object])
+        if (/\[object /i.test(decodeURIComponent(parsed.pathname))) continue;
         links.add(normalise(parsed.href));
       } catch {
         // skip unparseable hrefs

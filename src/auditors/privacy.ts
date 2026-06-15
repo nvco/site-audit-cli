@@ -35,7 +35,7 @@ export async function runPrivacyAudit(page: Page, config: Config): Promise<Audit
 
   // Privacy policy link
   const hasPrivacyLink = await page.locator('a').evaluateAll((els) =>
-    els.some((el) => /privacy\s*(policy|notice)/i.test(el.textContent ?? ''))
+    els.some((el) => /privacy/i.test(el.textContent ?? ''))
   );
   if (!hasPrivacyLink) {
     issues.push({

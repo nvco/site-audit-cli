@@ -23,7 +23,8 @@
     },
     "brokenLinks": {
       "enabled": false,
-      "includeExternal": false
+      "includeExternal": false,
+      "ignoredStatusCodes": [401, 403]
     }
   },
   "output": {

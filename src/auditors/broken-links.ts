@@ -6,14 +6,31 @@ export async function runBrokenLinksAudit(page: Page, config: Config): Promise<A
   const pageUrl = page.url();
   const pageOrigin = new URL(pageUrl).origin;
 
-  const hrefs: string[] = await page.$$eval('a[href]', (els) =>
-    els.map((el) => (el as { href: string }).href).filter(Boolean)
+  const hrefs: Array<{ resolved: string; raw: string }> = await page.$$eval('a[href]', (els) =>
+    els.map((el) => ({
+      resolved: (el as unknown as { href: string }).href,
+      raw: el.getAttribute('href') ?? '',
+    })).filter((h) => h.resolved)
   );
 
   const toCheck = new Set<string>();
-  for (const href of hrefs) {
+  for (const { resolved, raw } of hrefs) {
+    // Flag malformed href attributes (e.g. [object Object] from JS framework bugs)
+    if (raw && /^\[object /i.test(raw)) {
+      issues.push({
+        prefix: 'LNK',
+        impact: 'serious',
+        description: `Malformed href attribute — link resolves to "${resolved}"`,
+        location: raw,
+        docLink: 'https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#href',
+        remediation: `The href attribute value "${raw}" is a serialised JavaScript object, not a valid URL. Fix the code that sets this link's href.`,
+        rule: 'invalid-href',
+        pageUrl,
+      });
+      continue;
+    }
     try {
-      const parsed = new URL(href, pageUrl);
+      const parsed = new URL(resolved, pageUrl);
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') continue;
       parsed.hash = '';
       const url = parsed.href;
@@ -34,7 +51,8 @@ export async function runBrokenLinksAudit(page: Page, config: Config): Promise<A
       if (status === 405) {
         status = await getRequest(page, url);
       }
-      if (status >= 400) {
+      const ignored = config.modules.brokenLinks.ignoredStatusCodes;
+      if (status >= 400 && !ignored.includes(status)) {
         issues.push({
           prefix: 'LNK',
           impact: 'serious',

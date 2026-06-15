@@ -57,7 +57,10 @@ function normalizeBrokenLinks(val: unknown): BrokenLinksModuleConfig {
   const base = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
   const enabled = base['enabled'] !== false;
   const includeExternal = base['includeExternal'] === true;
-  return { enabled, includeExternal };
+  const ignoredStatusCodes = Array.isArray(base['ignoredStatusCodes'])
+    ? (base['ignoredStatusCodes'] as number[]).filter((n) => typeof n === 'number')
+    : [401, 403];
+  return { enabled, includeExternal, ignoredStatusCodes };
 }
 
 function validate(raw: unknown, filePath: string): Config {
