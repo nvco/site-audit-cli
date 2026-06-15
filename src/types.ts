@@ -46,6 +46,7 @@ export interface AccessibilityModuleConfig extends BaseModuleConfig {
 
 export interface PrivacyModuleConfig extends BaseModuleConfig {
   ccpa?: boolean;
+  consentBannerTimeout?: number;
 }
 
 export interface BrokenLinksModuleConfig extends BaseModuleConfig {

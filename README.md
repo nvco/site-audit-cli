@@ -59,7 +59,7 @@ gh workflow run audit.yml -f profile=config/full.json
 
 ### Config profiles
 
-Three ready-to-use profiles live in the `config/` folder. Edit the `urls` field and run.
+Three ready-to-use profiles live in the `config/` folder. Edit the `urls` field and run. Any file matching `config/*.local.json` is gitignored — use this pattern for personal or temporary configs you don't want committed (e.g. `config/full.local.json`).
 
 | Profile | Audience | Modules |
 |---|---|---|

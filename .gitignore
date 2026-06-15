@@ -21,6 +21,9 @@ reports/
 *.swp
 *.swo
 
+# Local config overrides (not committed)
+config/*.local.json
+
 # Environment
 .env
 .env.local

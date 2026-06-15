@@ -38,7 +38,10 @@ function normalizePrivacy(val: unknown): PrivacyModuleConfig {
   const base = typeof val === 'object' && val !== null ? (val as Record<string, unknown>) : {};
   const enabled = base['enabled'] !== false;
   const ccpa = base['ccpa'] === true;
-  return { enabled, ccpa };
+  const consentBannerTimeout = typeof base['consentBannerTimeout'] === 'number' && base['consentBannerTimeout'] > 0
+    ? base['consentBannerTimeout']
+    : 5000;
+  return { enabled, ccpa, consentBannerTimeout };
 }
 
 function normalizeFormat(val: unknown, defaultEnabled: boolean): FormatConfig {

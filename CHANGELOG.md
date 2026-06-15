@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-15
+
+### Fixed
+- Cookie consent banner detection now uses parallel `Promise.any` across all selectors instead of sequential 1s-per-selector checks — banners that load asynchronously are now reliably detected
+  - `src/auditors/privacy.ts` — replaced sequential loop with `Promise.any` race across all consent selectors
+  - New `consentBannerTimeout` field in privacy module config (default 5000ms) controls how long to wait; added to `full.json` and `compliance.json`
+
+### Added
+- `config/*.local.json` pattern added to `.gitignore` — use this naming convention for personal or temporary configs that should not be committed (e.g. `config/full.local.json`)
+- README updated to document the `.local.json` convention
+
 ## 2026-05-21
 
 ### Fixed

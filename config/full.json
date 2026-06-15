@@ -9,7 +9,8 @@
       }
     },
     "privacy": {
-      "enabled": true
+      "enabled": true,
+      "consentBannerTimeout": 5000
     },
     "cookies": {
       "enabled": true

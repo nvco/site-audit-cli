@@ -13,14 +13,13 @@ export async function runPrivacyAudit(page: Page, config: Config): Promise<Audit
   const pageUrl = page.url();
   const origin = new URL(pageUrl).origin;
 
-  // Cookie consent banner
-  let hasConsent = false;
-  for (const sel of CONSENT_SELECTORS) {
-    if (await page.locator(sel).first().isVisible({ timeout: 1000 }).catch(() => false)) {
-      hasConsent = true;
-      break;
-    }
-  }
+  // Cookie consent banner — check all selectors in parallel, resolve on first visible
+  const bannerTimeout = config.modules.privacy.consentBannerTimeout ?? 5000;
+  const hasConsent = await Promise.any(
+    CONSENT_SELECTORS.map((sel) =>
+      page.locator(sel).first().waitFor({ state: 'visible', timeout: bannerTimeout }).then(() => true)
+    )
+  ).catch(() => false);
   if (!hasConsent) {
     issues.push({
       prefix: 'PRI',
